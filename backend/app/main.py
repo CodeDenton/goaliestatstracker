@@ -1,27 +1,15 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 import requests
+from fastapi import FastAPI, HTTPException
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # fine for local dev
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.get("/goalies/{player_id}")
+def get_goalie(player_id: int):
+    url = f"https://api-web.nhle.com/v1/edge/goalie-detail/{player_id}/20252026/2"
+    response = requests.get(url)
 
-@app.get("/goalie/{player_id}")
-def goalie_stats(player_id: int):
-    url = f"https://api-web.nhle.com/v1/player/{player_id}/landing"
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to fetch NHL API")
 
-    res = requests.get(url)
-    if res.status_code != 200:
-        raise HTTPException(status_code=404, detail="Player not found")
-
-    return res.json()
-
-@app.get("/ping")
-def ping():
-    return {"status": "ok"}
+    # Return the full JSON as-is
+    return response.json()

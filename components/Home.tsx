@@ -1,3 +1,4 @@
+import Goalie from "./Goalie"
 import GoalieCard from "./GoalieCard"
 
 const Home = () => {
@@ -17,7 +18,11 @@ const Home = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {/* Goalie cards will go here */}
-          <GoalieCard></GoalieCard>
+            {/* <GoalieCard></GoalieCard> */}
+            <Goalie playerId="8476945"></Goalie>
+            <Goalie playerId="8479973"></Goalie>
+
+
         </div>
       </section>
 
