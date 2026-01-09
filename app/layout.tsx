@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Goalie Stats Dashboard",
-  description: "In depth NHL Goalie Stats",
+  title: "CreaseVision",
+  description: "Visualizing NHL goalie performance through shot maps, danger zones, and advanced metrics.",
 };
 
 export default function RootLayout({

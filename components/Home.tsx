@@ -5,14 +5,27 @@ const Home = () => {
     
   return (
    <>
-   <main className="min-h-screen bg-slate-900 text-white">
-    <header className="p-6 border-b border-slate-700">
-        <h1 className="text-3xl font-bold">Goalie Stats Dashboard</h1>
-        <p className="text-slate-400 mt-1">NHL goalie performance and analytics</p>
-    </header>
+   <main className="min-h-screen bg-[#495057] text-white">
+    <nav className="bg-[#212529]">
+  <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div className="text-[#F8F9FA] text-xl font-bold">
+      CreaseVision
+    </div>
+    
+    <div className="flex gap-6">
+      <a href="#" className="hover:text-gray-300">Home</a>
+      <a href="#" className="hover:text-gray-300">Goalies</a>
+      <a href="#" className="hover:text-gray-300">Contact</a>
+    </div>
+  </div>
+</nav>
+    {/* <header className="p-6 border-b border-slate-700">
+        <h1 className="text-[#F8F9FA] text-3xl font-bold">CreaseVision</h1>
+        <p className="text-[#F8F9FA] mt-1">Visualizing NHL goalie performance through shot maps, danger zones, and advanced metrics.</p>
+    </header> */}
 
      <section className="p-6">
-        <h2 className="text-xl font-semibold mb-4">
+        <h2 className="text-[#F8F9FA] text-xl font-semibold mb-4">
           Goalies
         </h2>
 

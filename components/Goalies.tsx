@@ -1,7 +1,7 @@
 import Goalie from "./Goalie";
 
 interface GoalieType {
-    player: {
+  player: {
     id: number;
     firstName: {
       default: string;
@@ -9,35 +9,44 @@ interface GoalieType {
     lastName: {
       default: string;
     };
+    savePctg: number
     headshot: string;
   };
 }
 const Goalies = async () => {
-    const res = await fetch(`http://localhost:8000/goalies/full`, {
-  cache: "no-store",
-});
+  const res = await fetch(`http://127.0.0.1:8000/goalies/full`, {
+    cache: "no-store",
+  });
 
-console.log("STATUS:", res.status);
-console.log("OK:", res.ok);
+  console.log("STATUS:", res.status);
+  console.log("OK:", res.ok);
 
-const text = await res.text();
-// console.log("RAW RESPONSE:", text);
+  const text = await res.text();
+  // console.log("RAW RESPONSE:", text);
 
-if (!res.ok) {
-  throw new Error(`API failed with ${res.status}`);
+  if (!res.ok) {
+    throw new Error(`API failed with ${res.status}`);
+  }
+
+  const data: GoalieType[] = JSON.parse(text);
+  console.log("PARSED:", data);
+
+  return (
+    <div className="flex gap-6">
+      {data
+  .sort((a: GoalieType, b: GoalieType) => {
+    // Sort by save percentage in descending order
+    const savePctA = a.player.savePctg ?? 0;
+    const savePctB = b.player.savePctg ?? 0;
+    return savePctB - savePctA;
+  })
+  .map((g: GoalieType) => (
+    <Goalie key={g.player.id} data={g}></Goalie>
+  ))
 }
+    </div>
+  )
 
-const data : GoalieType[] = JSON.parse(text);
-console.log("PARSED:", data);
 
-    return(
-        <>
-        {data.map((g : GoalieType) => (
-            <Goalie key={g.player.id} data={g}></Goalie>
-        ))}
-        </>
-    )
-
-    
 }
 export default Goalies
