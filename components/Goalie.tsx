@@ -55,7 +55,7 @@ const Goalie = ({ data }: { data: any }) => {
     <>
     {!showZoneMap ? (
       // Standard Cards View
-       <div className="flex flex-wrap justify-left gap-2" onClick={() => setShowZoneMap(true)}>
+       <div className="flex justify-center" onClick={() => setShowZoneMap(true)}>
         <div className="w-64 bg-[#343A40] rounded-xl p-4 hover:bg-[#6C757D] transition transform hover:scale-105 text-center">
           <img src={teamLogo} alt="" className="mx-auto w-32 h-32 rounded-full" />
           <img src={headshot} alt="" className="mx-auto w-32 h-32 rounded-full" />

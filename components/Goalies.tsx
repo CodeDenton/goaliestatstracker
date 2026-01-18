@@ -32,7 +32,7 @@ const Goalies = async () => {
   console.log("PARSED:", data);
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-wrap gap-6 w-400">
       {data
   .sort((a: GoalieType, b: GoalieType) => {
     // Sort by save percentage in descending order
