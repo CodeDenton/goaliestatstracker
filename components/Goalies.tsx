@@ -15,7 +15,8 @@ interface GoalieType {
 }
 const Goalies = async () => {
   // http://127.0.0.1:8000/goalies/full
-  const res = await fetch(`http://127.0.0.1:8000/goalies/full`, {
+  const renderBackend = "https://goaliestatsfastapi.onrender.com/"
+  const res = await fetch(`${renderBackend}/goalies/full`, {
     cache: "no-store",
   });
 
