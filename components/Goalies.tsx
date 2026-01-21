@@ -14,6 +14,7 @@ interface GoalieType {
   };
 }
 const Goalies = async () => {
+  // http://127.0.0.1:8000/goalies/full
   const res = await fetch(`http://127.0.0.1:8000/goalies/full`, {
     cache: "no-store",
   });
