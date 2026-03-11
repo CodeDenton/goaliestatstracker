@@ -2,141 +2,306 @@
 import { useState } from "react"
 import ZoneMapModel from "./ZoneMapModel"
 
-const Goalie = ({ data }: { data: any }) => {
+const svColor = (v: number) =>
+  v >= 0.94 ? "text-green-500"
+  : v >= 0.91 ? "text-green-300"
+  : v >= 0.89 ? "text-amber-400"
+  : v >= 0.86 ? "text-orange-400"
+  : "text-red-500"
+
+const fmtSv = (v: number) =>
+  `.${String(Math.round(v * 1000)).padStart(3, "0")}`
+
+const StatRow = ({ label, value, accent }: any) => (
+  <div className="flex justify-between items-baseline py-1.5 border-b border-white/5">
+    <span className="text-[10px] text-gray-500 tracking-widest uppercase">
+      {label}
+    </span>
+    <span className={`text-xs font-semibold tracking-tight ${accent ?? "text-neutral-100"}`}>
+      {value}
+    </span>
+  </div>
+)
+
+const SectionLabel = ({ children }: any) => (
+  <div className="text-[9px] font-bold tracking-[0.12em] uppercase text-gray-600 mt-4 mb-1">
+    {children}
+  </div>
+)
+
+const Goalie = ({ data }: any) => {
   const [showZoneMap, setShowZoneMap] = useState(false)
 
-  //stats
-  const teamLogo = data?.player?.team?.teamLogo.dark
+  const teamLogo  = data?.player?.team?.teamLogo?.dark
   const firstName = data?.player?.firstName?.default
-  const lastName = data?.player?.lastName?.default
-  const headshot = data?.player?.headshot
+  const lastName  = data?.player?.lastName?.default
+  const headshot  = data?.player?.headshot
 
-  const highDanger = data?.shotLocationSummary[1]?.savePctg ?? 0
-  const highDangerSavePercentile = data?.shotLocationSummary[1].savePctgPercentile ?? 0
-  const highGoalsAgainst = data?.shotLocationSummary[1]?.goalsAgainst ?? 0
-  const highSaves = data?.shotLocationSummary[1]?.saves ?? 0
-  const highShotsAgainst = highGoalsAgainst + highSaves
-
-  const midDanger = data?.shotLocationSummary[3]?.savePctg ?? 0
-  const midDangerSavePercentile = data?.shotLocationSummary[3].savePctgPercentile ?? 0
-  const midGoalsAgainst = data?.shotLocationSummary[3]?.goalsAgainst ?? 0
-  const midSaves = data?.shotLocationSummary[3]?.saves ?? 0
-  const midShotsAgainst = midGoalsAgainst + midSaves
-
-  const longDanger = data?.shotLocationSummary[2]?.savePctg ?? 0
-  const longDangerSavePercentile = data?.shotLocationSummary[2].savePctgPercentile ?? 0
-  const longGoalsAgainst = data?.shotLocationSummary[2]?.goalsAgainst ?? 0
-  const longSaves = data?.shotLocationSummary[2]?.saves ?? 0
-  const longShotsAgainst = longGoalsAgainst + longSaves
-
-  const allDanger = data?.shotLocationSummary[0]?.savePctg ?? 0
-  const allDangerSavePercentile = data?.shotLocationSummary[0].savePctgPercentile ?? 0
-  const allGoalsAgainst = data?.shotLocationSummary[0]?.goalsAgainst ?? 0
-  const allSaves = data?.shotLocationSummary[0]?.saves ?? 0
-  const allShotsAgainst = allGoalsAgainst + allSaves
-
-  //weak point helper func
-  const shotLocoDetails = data?.shotLocationDetails
-  let weakPoint = 0
-  for (let i = 0; i < shotLocoDetails.length - 1; i++) {
-    if (shotLocoDetails[i].savePctg < shotLocoDetails[weakPoint].savePctg && shotLocoDetails[i].saves > 5) {
-      weakPoint = i;
-    }
+  const build = (idx: number) => {
+    const d = data?.shotLocationSummary[idx]
+    const ga = d?.goalsAgainst ?? 0
+    const sv = d?.saves ?? 0
+    return { sv: d?.savePctg ?? 0, pct: d?.savePctgPercentile ?? 0, shots: ga + sv, saves: sv }
   }
-  const weakPointName = shotLocoDetails[weakPoint].area ?? 0
-  const weakPointSv = shotLocoDetails[weakPoint].savePctg ?? 0
-  const weakPointSavePercentile = shotLocoDetails[weakPoint].savePctgPercentile ?? 0
-  const weakPointSaves = shotLocoDetails[weakPoint].saves ?? 0
 
-  const allSvColor = allDanger >= 0.900 ? "text-emerald-400" : "text-red-400"
+  const all  = build(0)
+  const high = build(1)
+  const long = build(2)
+  const mid  = build(3)
 
+  const shotLocoDetails = data?.shotLocationDetails ?? []
 
-  return (
-    <>
-    {!showZoneMap ? (
-      // Standard Cards View
-       <div className="flex justify-center" onClick={() => setShowZoneMap(true)}>
-        <div className="w-64 bg-[#343A40] rounded-xl p-4 hover:bg-[#6C757D] transition transform hover:scale-105 text-center">
-          <img src={teamLogo} alt="" className="mx-auto w-32 h-32 rounded-full" />
-          <img src={headshot} alt="" className="mx-auto w-32 h-32 rounded-full" />
+  let weakIdx = 0
+  for (let i = 0; i < shotLocoDetails.length - 1; i++) {
+    if (
+      shotLocoDetails[i].savePctg <
+        shotLocoDetails[weakIdx].savePctg &&
+      shotLocoDetails[i].saves > 5
+    ) weakIdx = i
+  }
 
-          <h1 className="text-lg font-semibold text-center mb-1">
-            {firstName + " " + lastName}
-          </h1>
+  const weak = {
+    name: shotLocoDetails[weakIdx]?.area ?? "—",
+    sv: shotLocoDetails[weakIdx]?.savePctg ?? 0,
+    pct: shotLocoDetails[weakIdx]?.savePctgPercentile ?? 0,
+    saves: shotLocoDetails[weakIdx]?.saves ?? 0,
+  }
 
-          <h2 className="text-lg">Overall</h2>
-          <p className={`text-slate-400 text-lg`}>
-            Sv%: <strong className={allSvColor}>{Number(allDanger).toFixed(3)}%</strong> <br></br>
-            Shots Faced: <strong>{allShotsAgainst}</strong> <br></br>
-          </p>
+  // COLLAPSED CARD
+  if (!showZoneMap) {
+    return (
+      <div
+        onClick={() => setShowZoneMap(true)}
+        className="
+        w-[220px]
+        bg-neutral-900
+        border border-white/10
+        rounded-2xl
+        p-5
+        cursor-pointer
+        transition-all
+        hover:-translate-y-1
+        hover:bg-neutral-800
+        hover:border-white/20
+        hover:shadow-2xl
+        shadow-lg
+        relative
+        overflow-hidden
+        "
+      >
+
+        <div className="relative h-18 mb-4">
+
+          {teamLogo && (
+            <img
+              src={teamLogo}
+              className="absolute left-1/2 -translate-x-1/2 w-12 h-12 opacity-25"
+            />
+          )}
+
+          {headshot && (
+            <img
+              src={headshot}
+              className="
+              absolute left-1/2 -translate-x-1/2
+              w-[68px] h-[68px]
+              rounded-full
+              border border-white/10
+              object-cover
+              shadow-lg
+              "
+            />
+          )}
+
         </div>
-      </div>
-    ) : (
-      // Card Clicked Zone View
-      <div className="fixed inset-0 z-50 bg-[#495057] flex">
-         <div className="w-80 bg-[#343A40] p-4 overflow-y-auto border-r border-[#6C757D]">
-            <button 
-              onClick={() => setShowZoneMap(false)}
-              className="mb-4 text-slate-400 hover:text-white"
-            >
-              ← Back
-            </button>
-            <div className="text-center">
-               <img src={teamLogo} alt="" className="mx-auto w-32 h-32 rounded-full" />
-          <img src={headshot} alt="" className="mx-auto w-32 h-32 rounded-full" />
 
-          <h1 className="text-lg font-semibold text-center mb-1">
-            {firstName + " " + lastName}
-          </h1>
+        <div className="text-center mb-4">
+          <div className="text-sm font-semibold tracking-tight text-neutral-100">
+            {firstName} {lastName}
+          </div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">
+            Goaltender
+          </div>
+        </div>
 
-          <h2 className="text-lg">Overall</h2>
-          <p className={`text-slate-400 text-lg`}>
-            Sv%: <strong className={allSvColor}>{Number(allDanger).toFixed(3)}%</strong><br></br>
-            Save Percentile: <>{allDangerSavePercentile}</> <br />
-            Shots Faced: <strong>{allShotsAgainst}</strong> <br></br>
-          </p>
+        <div className="h-px bg-white/10 mb-3" />
 
-          <h2>High Danger</h2>
-          <p className="text-slate-400">
-            Sv%: <strong>{Number(highDanger).toFixed(3)}%</strong> <br></br>
-            Save Percentile: <>{highDangerSavePercentile}</> <br />
-            Shots: <strong>{highShotsAgainst}</strong> <br></br>
-          </p>
+        <div className="text-center mb-3">
+          <div className={`text-3xl font-bold tracking-tight ${svColor(all.sv)}`}>
+            {fmtSv(all.sv)}
+          </div>
+          <div className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">
+            Overall SV%
+          </div>
+        </div>
 
-          <h2>Mid Range</h2>
-          <p className="text-slate-400">
-            Sv%: <strong>{Number(midDanger).toFixed(3)}%</strong> <br></br>
-            Save Percentile: <>{midDangerSavePercentile}</> <br />
-            Shots: <strong>{midShotsAgainst}</strong> <br></br>
-          </p>
+        <div className="flex justify-between mt-2">
 
-          <h2>Long Range</h2>
-          <p className="text-slate-400">
-            Sv%: <strong>{Number(longDanger).toFixed(3)}%</strong> <br></br>
-            Save Percentile: <>{longDangerSavePercentile}</> <br />
-            Shots: <strong>{longShotsAgainst}</strong> <br></br>
-          </p>
+          {[{ label: "Shots", value: all.shots },
+            { label: "Saves", value: all.saves },
+            { label: "Pct", value: `${all.pct}th` }
+          ].map(stat => (
 
-          <h2>Weakest Area</h2>
-          <p className="text-slate-400">{weakPointName} <br />
-            Sv%: <strong>{Number(weakPointSv).toFixed(3)}%</strong> <br />
-            Save Percentile: <>{weakPointSavePercentile}</> <br />
-            Total Saves: <strong>{weakPointSaves}</strong>
-          </p>
+            <div key={stat.label} className="text-center">
+              <div className="text-sm font-semibold text-gray-300">
+                {stat.value}
+              </div>
+              <div className="text-[9px] uppercase text-gray-500 tracking-wider">
+                {stat.label}
+              </div>
             </div>
-            </div>
-         <div className="flex-1 p-8">
-      <ZoneMapModel
-        isOpen={showZoneMap}
-        onClose={() => setShowZoneMap(false)}
-        shotData={shotLocoDetails}
-        goalieInfo={{ firstName, lastName, headshot, teamLogo }}>
-      </ZoneMapModel>
-      </div>
+
+          ))}
+
+        </div>
+
+        <div className="text-center mt-4 text-[9px] uppercase tracking-wider text-gray-600">
+          Tap for zone map →
+        </div>
+
       </div>
     )
-    }
-    </>
+  }
+
+  // MODAL VIEW
+  return (
+    <div
+      onClick={() => setShowZoneMap(false)}
+      className="
+      fixed inset-0
+      z-50
+      flex items-center justify-center
+      bg-black/70
+      backdrop-blur-md
+      "
+    >
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="
+        bg-neutral-950
+        border border-white/10
+        rounded-2xl
+        shadow-2xl
+        flex flex-col
+        w-[min(900px,96vw)]
+        max-h-[92vh]
+        overflow-hidden
+        "
+      >
+
+        {/* HEADER */}
+
+        <div className="
+        flex justify-between items-center
+        px-6 py-4
+        border-b border-white/10
+        ">
+
+          <div className="flex items-center gap-3">
+
+            {headshot &&
+              <img
+                src={headshot}
+                className="w-10 h-10 rounded-full border border-white/10"
+              />
+            }
+
+            <div>
+              <div className="text-sm font-semibold text-neutral-100">
+                {firstName} {lastName}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">
+                Zone Save Map
+              </div>
+            </div>
+
+          </div>
+
+          <button
+            onClick={() => setShowZoneMap(false)}
+            className="
+            w-7 h-7
+            flex items-center justify-center
+            rounded-full
+            bg-white/10
+            text-gray-400
+            hover:bg-white/20
+            "
+          >
+            ×
+          </button>
+
+        </div>
+
+
+        {/* BODY */}
+
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* STATS SIDEBAR */}
+
+          <div className="
+          w-[210px]
+          border-r border-white/10
+          p-4
+          overflow-y-auto
+          ">
+
+            <SectionLabel>High Danger</SectionLabel>
+            <StatRow label="SV%" value={fmtSv(high.sv)} accent={svColor(high.sv)} />
+            <StatRow label="Shots" value={high.shots} />
+            <StatRow label="Percentile" value={`${high.pct}th`} />
+
+            <SectionLabel>Mid Range</SectionLabel>
+            <StatRow label="SV%" value={fmtSv(mid.sv)} accent={svColor(mid.sv)} />
+            <StatRow label="Shots" value={mid.shots} />
+            <StatRow label="Percentile" value={`${mid.pct}th`} />
+
+            <SectionLabel>Long Range</SectionLabel>
+            <StatRow label="SV%" value={fmtSv(long.sv)} accent={svColor(long.sv)} />
+            <StatRow label="Shots" value={long.shots} />
+            <StatRow label="Percentile" value={`${long.pct}th`} />
+
+            <SectionLabel>Weakest Zone</SectionLabel>
+
+            <div className="
+            bg-red-500/10
+            border border-red-500/20
+            rounded-lg
+            p-3 mt-2
+            ">
+
+              <div className="text-sm font-semibold mb-2 text-neutral-100">
+                {weak.name}
+              </div>
+
+              <StatRow label="SV%" value={fmtSv(weak.sv)} accent={svColor(weak.sv)} />
+              <StatRow label="Saves" value={weak.saves} />
+              <StatRow label="Percentile" value={`${weak.pct}th`} />
+
+            </div>
+
+          </div>
+
+          {/* ZONE MAP */}
+
+          <div className="flex-1 p-6 overflow-y-auto">
+
+            <ZoneMapModel
+              isOpen={showZoneMap}
+              onClose={() => setShowZoneMap(false)}
+              shotData={shotLocoDetails}
+              goalieInfo={{ firstName, lastName, headshot, teamLogo }}
+            />
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
   )
 }
 
