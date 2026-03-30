@@ -29,7 +29,8 @@ const SectionLabel = ({ children }: any) => (
   </div>
 )
 
-const Goalie = ({ data }: any) => {
+const Goalie = ({ data}: any) => {  
+  
   const [showZoneMap, setShowZoneMap] = useState(false)
 
   const teamLogo  = data?.player?.team?.teamLogo?.dark
@@ -55,7 +56,7 @@ const Goalie = ({ data }: any) => {
   for (let i = 0; i < shotLocoDetails.length - 1; i++) {
     if (
       shotLocoDetails[i].savePctg <
-        shotLocoDetails[weakIdx].savePctg &&
+      shotLocoDetails[weakIdx].savePctg &&
       shotLocoDetails[i].saves > 5
     ) weakIdx = i
   }
