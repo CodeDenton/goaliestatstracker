@@ -13,8 +13,7 @@ interface GoalieType {
 
 const Home = async () => {
   // const res = await fetch("http://localhost:8080/api/goalies", { cache: "no-store" });
-  const renderBackend = "https://your-spring-backend.onrender.com";
-  const res = await fetch(`${renderBackend}/api/goalies`, { cache: "no-store" });
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/goalies`, { cache: "no-store" });
 
   if (!res.ok) {
     throw new Error(`API failed with ${res.status}`);
