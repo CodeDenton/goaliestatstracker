@@ -13,7 +13,10 @@ interface GoalieType {
 
 const Home = async () => {
   // const res = await fetch("http://localhost:8080/api/goalies", { cache: "no-store" });
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/goalies`, { cache: "no-store" });
+  // cache for 1 hour
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/goalies`, { 
+    next: { revalidate: 3600 }
+  });
 
   if (!res.ok) {
     throw new Error(`API failed with ${res.status}`);
@@ -28,25 +31,6 @@ const Home = async () => {
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
-
-      {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 border-b border-white/10 bg-neutral-950/80 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <a href="#" className="text-xl font-semibold tracking-tight text-neutral-100 hover:text-white transition-colors">
-              CreaseVision
-            </a>
-            <span className="font-serif italic text-base text-neutral-500 pt-1 font-normal tracking-wide">
-              by denton
-            </span>
-          </div>
-          <div className="flex items-center gap-8 text-sm text-neutral-400">
-            <a href="#" className="hover:text-neutral-100 transition-colors">Home</a>
-            <a href="#" className="hover:text-neutral-100 transition-colors">Goalies</a>
-            <a href="#" className="hover:text-neutral-100 transition-colors">About</a>
-          </div>
-        </div>
-      </nav>
 
       {/* HERO / DASHBOARD OVERVIEW */}
       <header className="max-w-7xl mx-auto px-6 pt-10 pb-8">
