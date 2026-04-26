@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const { question, history } = await req.json();
 
     const goaliesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/goalies`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 86400 }, //once every 24 hours
     });
     const goalies = await goaliesRes.json();
 
