@@ -19,10 +19,17 @@ const gaaColor = (v: number) =>
   : v <= 3.5 ? "#f97316"
   : "#ef4444"
 
+const gpColor = (v: number) =>
+  v >= 60 ? "#10b981"
+  : v >= 50 ? "#34d399"
+  : v >= 30 ? "#fbbf24"
+  : v >= 20 ? "#f97316"
+  : "#ef4444"
+
 const Goalie = ({ data, rank, sortBy }: any) => {
 
   //View goalie JSON
-  // console.log(data)
+  console.log(data)
 
   const [showModal, setShowModal] = useState(false)
 
@@ -38,6 +45,7 @@ const Goalie = ({ data, rank, sortBy }: any) => {
   const pct = all?.savePctgPercentile ?? 0
 
   const gaa = data?.player?.goalsAgainstAvg ?? 0
+  const gp = data?.player?.gamesPlayed ?? 0
 
 
   return (
@@ -86,14 +94,15 @@ const Goalie = ({ data, rank, sortBy }: any) => {
         <div className="text-center mb-4">
           <div
             className="text-3xl font-bold tracking-tight tabular-nums"
-             style={{ color: sortBy === 'gaa' ? gaaColor(gaa) : svColor(sv) }}
+             style={{ color: sortBy === 'gaa' ? gaaColor(gaa) : sortBy === 'gamesPlayed' ? gpColor(gp) : svColor(sv) }}
           >
             {sortBy === 'gaa'
-              ? (data?.player?.goalsAgainstAvg ?? 0).toFixed(2)
+              ? gaa.toFixed(2)
+              : sortBy === 'gamesPlayed' ? gp
               : fmtSv(sv)}
           </div>
           <div className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">
-            {sortBy === 'gaa' ? 'GAA' : 'Save %'}
+            {sortBy === 'gaa' ? 'GAA' : sortBy === 'savePctg' ? 'Save %' : 'GP'}
           </div>
         </div>
 
