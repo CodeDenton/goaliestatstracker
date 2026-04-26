@@ -4,17 +4,23 @@ import Goalie from "./Goalie"
 
 const GoalieGrid = ({ goalies, avgSavePctg, totalGoalies }: any) => {
   const [selectedTeam, setSelectedTeam] = useState("ALL")
+  const [search, setSearch] = useState("")
 
   const teams = ["ALL", ...Array.from(
     new Set(goalies.map((g: any) => g.player?.team?.abbrev).filter(Boolean))
   ).sort()] as string[]
 
-  const filtered = selectedTeam === "ALL"
-    ? goalies
-    : goalies.filter((g: any) => g.player?.team?.abbrev === selectedTeam)
+  const filtered = goalies
+  .filter((g: any) => selectedTeam === "ALL" || g.player?.team?.abbrev === selectedTeam)
+  .filter((g: any) => {
+    const name = `${g.player?.firstName?.default} ${g.player?.lastName?.default}`.toLowerCase()
+    return name.includes(search.toLowerCase())
+  })
+
 
     const filteredAvg = filtered.reduce((sum: number, g: any) => sum + (g.player?.savePctg ?? 0), 0) / filtered.length
     const filteredTotal = filtered.length
+
 
   return (
     <>
@@ -35,6 +41,17 @@ const GoalieGrid = ({ goalies, avgSavePctg, totalGoalies }: any) => {
           <span className="text-xs font-semibold text-neutral-200">25–26</span>
         </div>
       </div>
+
+    {/* Search */}
+<div className="max-w-7xl mx-auto px-6 pt-6 pb-2">
+  <input
+    type="text"
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    placeholder="Search goalie..."
+    className="w-64 bg-neutral-800/60 border border-white/8 rounded-lg px-4 py-2 text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-white/20 transition-colors"
+  />
+</div>
 
       {/* Team filter */}
       <div className="max-w-7xl mx-auto px-6 pt-6 pb-4">
