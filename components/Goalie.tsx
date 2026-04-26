@@ -30,7 +30,7 @@ const Goalie = ({ data, rank}: any) => {
     <>
       <div
         onClick={() => setShowModal(true)}
-        className="group relative bg-neutral-900 border border-white/8 rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-white/15 hover:shadow-xl hover:shadow-black/40"
+        className="group relative bg-neutral-900 border border-white/8 rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-white/15 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]"
       >
         {/* Rank badge */}
 <div className="absolute top-3 left-3 text-[10px] font-bold text-neutral-600 tabular-nums">
