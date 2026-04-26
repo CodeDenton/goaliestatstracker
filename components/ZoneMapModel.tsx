@@ -1,3 +1,7 @@
+"use client"
+
+import { useState } from "react"
+
 interface ZoneMapModelProps {
   isOpen: boolean
   onClose: () => void
@@ -11,6 +15,9 @@ interface ZoneMapModelProps {
 }
 
 const ZoneMapModel = ({ isOpen, onClose, shotData, goalieInfo }: ZoneMapModelProps) => {
+  const [hoveredZone, setHoveredZone] = useState<string | null>(null)
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
+
   if (!isOpen) return null
 
   const zonePos: {
@@ -24,127 +31,211 @@ const ZoneMapModel = ({ isOpen, onClose, shotData, goalieInfo }: ZoneMapModelPro
       savePercentile: number
     }
   } = {
-    "Beyond Red Line": { x:110,y:0,width:180,height:60,savePctg:Number(Number(shotData[1].savePctg).toFixed(3)),saves:shotData[1].saves,savePercentile:shotData[1].savePctgPercentile },
-    "Offensive Zone": { x:115,y:62.5,width:170,height:60,savePctg:Number(Number(shotData[10].savePctg).toFixed(3)),saves:shotData[10].saves,savePercentile:shotData[10].savePctgPercentile },
-    "L Point": { x:10,y:70,width:100,height:70,savePctg:Number(Number(shotData[8].savePctg).toFixed(3)),saves:shotData[8].saves,savePercentile:shotData[8].savePctgPercentile },
-    "Center Point": { x:130,y:125,width:140,height:50,savePctg:Number(Number(shotData[2].savePctg).toFixed(3)),saves:shotData[2].saves,savePercentile:shotData[2].savePctgPercentile },
-    "R Point": { x:290,y:70,width:100,height:70,savePctg:Number(Number(shotData[16].savePctg).toFixed(3)),saves:shotData[16].saves,savePercentile:shotData[16].savePctgPercentile },
-    "Outside L": { x:0,y:150,width:90,height:100,savePctg:Number(Number(shotData[11].savePctg).toFixed(3)),saves:shotData[11].saves,savePercentile:shotData[11].savePctgPercentile },
-    "Outside R": { x:310,y:150,width:90,height:100,savePctg:Number(Number(shotData[12].savePctg).toFixed(3)),saves:shotData[12].saves,savePercentile:shotData[12].savePctgPercentile },
-    "L Circle": { x:50,y:255,width:80,height:70,savePctg:Number(Number(shotData[5].savePctg).toFixed(3)),saves:shotData[5].saves,savePercentile:shotData[5].savePctgPercentile },
-    "R Circle": { x:270,y:255,width:80,height:70,savePctg:Number(Number(shotData[13].savePctg).toFixed(3)),saves:shotData[13].saves,savePercentile:shotData[13].savePctgPercentile },
-    "High Slot": { x:140,y:180,width:120,height:90,savePctg:Number(Number(shotData[4].savePctg).toFixed(3)),saves:shotData[4].saves,savePercentile:shotData[4].savePctgPercentile },
-    "Low Slot": { x:140,y:275,width:120,height:70,savePctg:Number(Number(shotData[9].savePctg).toFixed(3)),saves:shotData[9].saves,savePercentile:shotData[9].savePctgPercentile },
-    "L Net Side": { x:80,y:350,width:80,height:50,savePctg:Number(Number(shotData[7].savePctg).toFixed(3)),saves:shotData[7].saves,savePercentile:shotData[7].savePctgPercentile },
-    "R Net Side": { x:240,y:350,width:80,height:50,savePctg:Number(Number(shotData[15].savePctg).toFixed(3)),saves:shotData[15].saves,savePercentile:shotData[15].savePctgPercentile },
-    "L Corner": { x:0,y:330,width:80,height:80,savePctg:Number(Number(shotData[6].savePctg).toFixed(3)),saves:shotData[6].saves,savePercentile:shotData[6].savePctgPercentile },
-    "R Corner": { x:320,y:330,width:80,height:80,savePctg:Number(Number(shotData[14].savePctg).toFixed(3)),saves:shotData[14].saves,savePercentile:shotData[14].savePctgPercentile },
-    "Behind the Net": { x:10,y:415,width:380,height:50,savePctg:Number(Number(shotData[0].savePctg).toFixed(3)),saves:shotData[0].saves,savePercentile:shotData[0].savePctgPercentile },
-    "Crease": { x:160,y:350,width:80,height:50,savePctg:Number(Number(shotData[3].savePctg).toFixed(3)),saves:shotData[3].saves,savePercentile:shotData[3].savePctgPercentile },
+    // Above blue line — full width
+    "Beyond Red Line":        { x:8,   y:8,   width:584, height:50,  savePctg:Number(shotData[1].savePctg.toFixed(3)),  saves:shotData[1].saves,  savePercentile:shotData[1].savePctgPercentile },
+    "Offensive Neutral Zone": { x:8,   y:60,  width:584, height:50,  savePctg:Number(shotData[10].savePctg.toFixed(3)), saves:shotData[10].saves, savePercentile:shotData[10].savePctgPercentile },
+
+    // Blue line at y=112
+
+    // Point row — three equal columns
+    "L Point":                { x:8,   y:114, width:185, height:90,  savePctg:Number(shotData[8].savePctg.toFixed(3)),  saves:shotData[8].saves,  savePercentile:shotData[8].savePctgPercentile },
+    "Center Point":           { x:205, y:114, width:190, height:90,  savePctg:Number(shotData[2].savePctg.toFixed(3)),  saves:shotData[2].saves,  savePercentile:shotData[2].savePctgPercentile },
+    "R Point":                { x:407, y:114, width:185, height:90,  savePctg:Number(shotData[16].savePctg.toFixed(3)), saves:shotData[16].saves, savePercentile:shotData[16].savePctgPercentile },
+
+    // Outside + High Slot row
+    "Outside L":              { x:8,   y:206, width:185, height:110, savePctg:Number(shotData[11].savePctg.toFixed(3)), saves:shotData[11].saves, savePercentile:shotData[11].savePctgPercentile },
+    "High Slot":              { x:205, y:206, width:190, height:110, savePctg:Number(shotData[4].savePctg.toFixed(3)),  saves:shotData[4].saves,  savePercentile:shotData[4].savePctgPercentile },
+    "Outside R":              { x:407, y:206, width:185, height:110, savePctg:Number(shotData[12].savePctg.toFixed(3)), saves:shotData[12].saves, savePercentile:shotData[12].savePctgPercentile },
+
+    // Circle + Low Slot row
+    "L Circle":               { x:8,   y:318, width:185, height:110, savePctg:Number(shotData[5].savePctg.toFixed(3)),  saves:shotData[5].saves,  savePercentile:shotData[5].savePctgPercentile },
+    "Low Slot":               { x:205, y:318, width:190, height:110, savePctg:Number(shotData[9].savePctg.toFixed(3)),  saves:shotData[9].saves,  savePercentile:shotData[9].savePctgPercentile },
+    "R Circle":               { x:407, y:318, width:185, height:110, savePctg:Number(shotData[13].savePctg.toFixed(3)), saves:shotData[13].saves, savePercentile:shotData[13].savePctgPercentile },
+
+    // Net area row
+    "L Corner":               { x:8,   y:430, width:185, height:110, savePctg:Number(shotData[6].savePctg.toFixed(3)),  saves:shotData[6].saves,  savePercentile:shotData[6].savePctgPercentile },
+    "L Net Side":             { x:205, y:430, width:60,  height:110, savePctg:Number(shotData[7].savePctg.toFixed(3)),  saves:shotData[7].saves,  savePercentile:shotData[7].savePctgPercentile },
+    "Crease":                 { x:267, y:430, width:66,  height:110, savePctg:Number(shotData[3].savePctg.toFixed(3)),  saves:shotData[3].saves,  savePercentile:shotData[3].savePctgPercentile },
+    "R Net Side":             { x:335, y:430, width:70,  height:110, savePctg:Number(shotData[15].savePctg.toFixed(3)), saves:shotData[15].saves, savePercentile:shotData[15].savePctgPercentile },
+    "R Corner":               { x:407, y:430, width:185, height:110, savePctg:Number(shotData[14].savePctg.toFixed(3)), saves:shotData[14].saves, savePercentile:shotData[14].savePctgPercentile },
+
+    // Behind the net
+    "Behind the Net":         { x:8,   y:542, width:584, height:50,  savePctg:Number(shotData[0].savePctg.toFixed(3)),  saves:shotData[0].saves,  savePercentile:shotData[0].savePctgPercentile },
   }
 
   const getZoneColor = (pctg: number) => {
-    if (pctg >= 0.96) return "#22c55e"
-    if (pctg >= 0.94) return "#4ade80"
-    if (pctg >= 0.92) return "#86efac"
-    if (pctg >= 0.9) return "#fbbf24"
+    if (pctg >= 0.96) return "#10b981"
+    if (pctg >= 0.94) return "#34d399"
+    if (pctg >= 0.92) return "#6ee7b7"
+    if (pctg >= 0.90) return "#fbbf24"
     if (pctg >= 0.87) return "#f97316"
     if (pctg >= 0.84) return "#ef4444"
     return "#dc2626"
   }
 
-  const getTextColor = (pctg: number) => (pctg >= 0.92 ? "#111827" : "#ffffff")
+  const getPercentileLabel = (p: number) => {
+    if (p >= 0.9) return "Elite"
+    if (p >= 0.7) return "Above Avg"
+    if (p >= 0.4) return "Average"
+    if (p >= 0.2) return "Below Avg"
+    return "Poor"
+  }
+
+  const hoveredData = hoveredZone ? zonePos[hoveredZone] : null
+
+  const handleMouseMove = (e: React.MouseEvent<SVGGElement>) => {
+    const svg = (e.currentTarget as SVGGElement).ownerSVGElement!
+    const rect = svg.getBoundingClientRect()
+    setTooltipPos({
+      x: (e.clientX - rect.left) * (600 / rect.width),
+      y: (e.clientY - rect.top) * (600 / rect.height),
+    })
+  }
 
   return (
-    <div className="w-full h-full flex flex-col items-center">
+    <div className="w-full flex flex-col items-center select-none">
+      <div className="relative w-full">
+        <svg
+          viewBox="0 0 600 600"
+          className="w-full"
+          onMouseLeave={() => setHoveredZone(null)}
+        >
+          {/* Background */}
+          <rect x="0" y="0" width="600" height="600" fill="#ffffff" rx="14" />
 
-      <svg
-        viewBox="0 0 400 470"
-        className="w-full max-h-[calc(92vh-160px)]"
-      >
-        <rect x="0" y="0" width="400" height="470" fill="#18191c" rx="10" />
+          {/* Rink outline */}
+          <rect x="4" y="4" width="592" height="592" fill="none" stroke="#1d2d44" strokeWidth="2.5" rx="12" />
 
-        {Object.entries(zonePos).map(([zoneName, pos]) => {
-          const fill = getZoneColor(pos.savePctg)
-          const textCol = getTextColor(pos.savePctg)
-          const cx = pos.x + pos.width / 2
-          const lineH = pos.height
-          const compact = lineH < 56
+          {/* Blue line */}
+          <line x1="4" y1="112" x2="596" y2="112" stroke="#3b82f6" strokeWidth="2" opacity="0.6" />
 
-          return (
-            <g key={zoneName}>
-              <rect
-                x={pos.x + 1}
-                y={pos.y + 1}
-                width={pos.width - 2}
-                height={pos.height - 2}
-                fill={fill}
-                opacity={0.82}
-                rx={6}
-              />
+          {/* Red goal line */}
+          <line x1="4" y1="538" x2="596" y2="538" stroke="#ef4444" strokeWidth="2" opacity="0.6" />
 
-              {compact ? (
-                <>
+          {/* Faceoff circles */}
+          <circle cx="100" cy="390" r="50" fill="none" stroke="#1f2937" strokeWidth="1.5" opacity="0.5" />
+          <circle cx="500" cy="390" r="50" fill="none" stroke="#1f2937" strokeWidth="1.5" opacity="0.5" />
+          <circle cx="100" cy="390" r="3" fill="#ff0000" opacity="0.7" />
+          <circle cx="500" cy="390" r="3" fill="#ff0000" opacity="0.7" />
+
+          {/* Crease arc */}
+          <path d="M 240 538 A 60 45 0 0 1 360 538" fill="none" stroke="#60a5fa" strokeWidth="1.5" opacity="0.4" />
+
+          {/* Net */}
+          <rect x="262" y="546" width="76" height="20" fill="none" stroke="#6b7280" strokeWidth="1.5" opacity="0.5" rx="3" />
+
+          {/* Zone cells */}
+          {Object.entries(zonePos).map(([zoneName, pos]) => {
+            const fill = getZoneColor(pos.savePctg)
+            const isHovered = hoveredZone === zoneName
+            const cx = pos.x + pos.width / 2
+            const cy = pos.y + pos.height / 2
+            const compact = pos.height < 70
+
+            return (
+              <g
+                key={zoneName}
+                onMouseEnter={(e) => { setHoveredZone(zoneName); handleMouseMove(e) }}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={() => setHoveredZone(null)}
+                style={{ cursor: "pointer" }}
+              >
+                <rect
+                  x={pos.x + 1.5}
+                  y={pos.y + 1.5}
+                  width={pos.width - 3}
+                  height={pos.height - 3}
+                  fill={fill}
+                  opacity={isHovered ? 1 : 0.78}
+                  rx={6}
+                  style={{ transition: "opacity 0.12s ease" }}
+                />
+
+                {/* Zone label */}
+                {!compact && (
                   <text
                     x={cx}
-                    y={pos.y + lineH / 2 - 5}
+                    y={cy - 12}
                     textAnchor="middle"
-                    fill={textCol}
-                    fontSize="7.5"
+                    fill={pos.savePctg >= 0.92 ? "#11182799" : "#ffffff88"}
+                    fontSize="9"
                     fontWeight="600"
+                    letterSpacing="0.5"
                   >
-                    {zoneName}
+                    {zoneName.toUpperCase()}
                   </text>
+                )}
 
+                {/* Save % */}
+                <text
+                  x={cx}
+                  y={compact ? cy + 5 : cy + 10}
+                  textAnchor="middle"
+                  fill={pos.savePctg >= 0.92 ? "#111827" : "#ffffff"}
+                  fontSize={compact ? "11" : "17"}
+                  fontWeight="800"
+                  fontFamily="monospace"
+                >
+                  .{String(Math.round(pos.savePctg * 1000)).padStart(3, "0")}
+                </text>
+
+                {/* Saves count */}
+                {!compact && (
                   <text
                     x={cx}
-                    y={pos.y + lineH / 2 + 6}
+                    y={cy + 26}
                     textAnchor="middle"
-                    fill={textCol}
-                    fontSize="7"
-                    opacity="0.8"
+                    fill={pos.savePctg >= 0.92 ? "#11182766" : "#ffffff55"}
+                    fontSize="8.5"
                   >
-                    .{String(Math.round(pos.savePctg * 1000)).padStart(3, "0")} · {pos.saves} sv
+                    {pos.saves} sv
                   </text>
-                </>
-              ) : (
-                <>
-                  <text x={cx} y={pos.y + lineH * 0.28} textAnchor="middle" fill={textCol} fontSize="9" fontWeight="600">
-                    {zoneName}
-                  </text>
+                )}
+              </g>
+            )
+          })}
 
-                  <text x={cx} y={pos.y + lineH * 0.52} textAnchor="middle" fill={textCol} fontSize="11" fontWeight="700">
-                    .{String(Math.round(pos.savePctg * 1000)).padStart(3, "0")}
-                  </text>
+          {/* Tooltip */}
+          {hoveredZone && hoveredData && (() => {
+            const tw = 155
+            const th = 84
+            const tx = Math.min(tooltipPos.x + 14, 600 - tw - 8)
+            const ty = Math.max(tooltipPos.y - th - 10, 8)
 
-                  <text x={cx} y={pos.y + lineH * 0.7} textAnchor="middle" fill={textCol} fontSize="7" opacity="0.72">
-                    {pos.saves} saves
-                  </text>
-
-                  <text x={cx} y={pos.y + lineH * 0.85} textAnchor="middle" fill={textCol} fontSize="6.5" opacity="0.6">
-                    {Number(pos.savePercentile).toFixed(0)}th pct
-                  </text>
-                </>
-              )}
-            </g>
-          )
-        })}
-      </svg>
+            return (
+              <g style={{ pointerEvents: "none" }}>
+                <rect x={tx + 2} y={ty + 2} width={tw} height={th} rx={8} fill="#000000" opacity="0.35" />
+                <rect x={tx} y={ty} width={tw} height={th} rx={8} fill="#0f172a" stroke="#334155" strokeWidth="1" />
+                <text x={tx + 12} y={ty + 18} fill="#64748b" fontSize="8" fontWeight="700" letterSpacing="0.8">
+                  {hoveredZone.toUpperCase()}
+                </text>
+                <text x={tx + 12} y={ty + 40} fill="#f1f5f9" fontSize="20" fontWeight="800" fontFamily="monospace">
+                  .{String(Math.round(hoveredData.savePctg * 1000)).padStart(3, "0")}
+                </text>
+                <text x={tx + 12} y={ty + 56} fill="#475569" fontSize="8.5">
+                  {hoveredData.saves} saves recorded
+                </text>
+                <rect x={tx + 12} y={ty + 65} width={6} height={6} rx={2} fill={getZoneColor(hoveredData.savePercentile)} />
+                <text x={tx + 22} y={ty + 72} fill={getZoneColor(hoveredData.savePercentile)} fontSize="8" fontWeight="600">
+                  {getPercentileLabel(hoveredData.savePercentile)} · {Math.round(hoveredData.savePercentile * 100)}th percentile
+                </text>
+              </g>
+            )
+          })()}
+        </svg>
+      </div>
 
       {/* Legend */}
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-[10px] text-slate-500">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-5 text-[11px] text-neutral-500">
         {[
-          { label: "Elite", color: "#22c55e" },
-          { label: "Above Avg", color: "#86efac" },
-          { label: "Average", color: "#fbbf24" },
-          { label: "Below Avg", color: "#f97316" },
-          { label: "Poor", color: "#ef4444" },
+          { label: "Elite (96+)", color: "#10b981" },
+          { label: "Above Avg (92–96)", color: "#6ee7b7" },
+          { label: "Average (90–92)", color: "#fbbf24" },
+          { label: "Below Avg (87–90)", color: "#f97316" },
+          { label: "Poor (<87)", color: "#ef4444" },
         ].map(({ label, color }) => (
-          <div key={label} className="flex items-center gap-1.5">
-            <div
-              className="w-2 h-2 rounded-sm"
-              style={{ background: color, opacity: 0.85 }}
-            />
+          <div key={label} className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-sm" style={{ background: color }} />
             <span>{label}</span>
           </div>
         ))}

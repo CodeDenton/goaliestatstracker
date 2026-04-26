@@ -1,308 +1,116 @@
 "use client"
 import { useState } from "react"
-import ZoneMapModel from "./ZoneMapModel"
-
-const svColor = (v: number) =>
-  v >= 0.94 ? "text-green-500"
-  : v >= 0.91 ? "text-green-300"
-  : v >= 0.89 ? "text-amber-400"
-  : v >= 0.86 ? "text-orange-400"
-  : "text-red-500"
+import GoalieModal from "./GoalieModal"
 
 const fmtSv = (v: number) =>
   `.${String(Math.round(v * 1000)).padStart(3, "0")}`
 
-const StatRow = ({ label, value, accent }: any) => (
-  <div className="flex justify-between items-baseline py-1.5 border-b border-white/5">
-    <span className="text-[10px] text-gray-500 tracking-widest uppercase">
-      {label}
-    </span>
-    <span className={`text-xs font-semibold tracking-tight ${accent ?? "text-neutral-100"}`}>
-      {value}
-    </span>
-  </div>
-)
+const svColor = (v: number) =>
+  v >= 0.94 ? "#10b981"
+  : v >= 0.91 ? "#34d399"
+  : v >= 0.89 ? "#fbbf24"
+  : v >= 0.86 ? "#f97316"
+  : "#ef4444"
 
-const SectionLabel = ({ children }: any) => (
-  <div className="text-[9px] font-bold tracking-[0.12em] uppercase text-gray-600 mt-4 mb-1">
-    {children}
-  </div>
-)
-
-const Goalie = ({ data}: any) => {  
-  
-  const [showZoneMap, setShowZoneMap] = useState(false)
+const Goalie = ({ data, rank}: any) => {
+  const [showModal, setShowModal] = useState(false)
 
   const teamLogo  = data?.player?.team?.teamLogo?.dark
   const firstName = data?.player?.firstName?.default
   const lastName  = data?.player?.lastName?.default
   const headshot  = data?.player?.headshot
 
-  const build = (idx: number) => {
-    const d = data?.shotLocationSummary[idx]
-    const ga = d?.goalsAgainst ?? 0
-    const sv = d?.saves ?? 0
-    return { sv: d?.savePctg ?? 0, pct: d?.savePctgPercentile ?? 0, shots: ga + sv, saves: sv }
-  }
+  const all = data?.shotLocationSummary?.[0]
+  const sv  = all?.savePctg ?? 0
+  const shots = (all?.goalsAgainst ?? 0) + (all?.saves ?? 0)
+  const saves = all?.saves ?? 0
+  const pct   = all?.savePctgPercentile ?? 0
 
-  const all  = build(0)
-  const high = build(1)
-  const long = build(2)
-  const mid  = build(3)
-
-  const shotLocoDetails = data?.shotLocationDetails ?? []
-
-  let weakIdx = 0
-  for (let i = 0; i < shotLocoDetails.length - 1; i++) {
-    if (
-      shotLocoDetails[i].savePctg <
-      shotLocoDetails[weakIdx].savePctg &&
-      shotLocoDetails[i].saves > 5
-    ) weakIdx = i
-  }
-
-  const weak = {
-    name: shotLocoDetails[weakIdx]?.area ?? "—",
-    sv: shotLocoDetails[weakIdx]?.savePctg ?? 0,
-    pct: shotLocoDetails[weakIdx]?.savePctgPercentile ?? 0,
-    saves: shotLocoDetails[weakIdx]?.saves ?? 0,
-  }
-
-  // COLLAPSED CARD
-  if (!showZoneMap) {
-    return (
+  return (
+    <>
       <div
-        onClick={() => setShowZoneMap(true)}
-        className="
-        w-[220px]
-        bg-neutral-900
-        border border-white/10
-        rounded-2xl
-        p-5
-        cursor-pointer
-        transition-all
-        hover:-translate-y-1
-        hover:bg-neutral-800
-        hover:border-white/20
-        hover:shadow-2xl
-        shadow-lg
-        relative
-        overflow-hidden
-        "
+        onClick={() => setShowModal(true)}
+        className="group relative bg-neutral-900 border border-white/8 rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-white/15 hover:shadow-xl hover:shadow-black/40"
       >
+        {/* Rank badge */}
+<div className="absolute top-3 left-3 text-[10px] font-bold text-neutral-600 tabular-nums">
+  #{rank}
+</div>
+        {/* Team logo watermark */}
+        {teamLogo && (
+          <img
+            src={teamLogo}
+            className="absolute right-4 top-4 w-10 h-10 opacity-10 group-hover:opacity-15 transition-opacity"
+          />
+        )}
 
-        <div className="relative h-18 mb-4">
-
-          {teamLogo && (
-            <img
-              src={teamLogo}
-              className="absolute left-1/2 -translate-x-1/2 w-12 h-12 opacity-25"
-            />
-          )}
-
+        {/* Headshot */}
+        <div className="flex justify-center mb-4">
           {headshot && (
             <img
               src={headshot}
-              className="
-              absolute left-1/2 -translate-x-1/2
-              w-[68px] h-[68px]
-              rounded-full
-              border border-white/10
-              object-cover
-              shadow-lg
-              "
+              className="w-16 h-16 rounded-full border border-white/10 object-cover shadow-lg"
             />
           )}
-
         </div>
 
+        {/* Name */}
         <div className="text-center mb-4">
-          <div className="text-sm font-semibold tracking-tight text-neutral-100">
+          <div className="text-sm font-semibold text-neutral-100 tracking-tight">
             {firstName} {lastName}
           </div>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">
-            Goaltender
+          <div className="text-[10px] text-neutral-500 uppercase tracking-widest mt-0.5">
+            {data?.player?.team?.abbrev ?? "NHL"}
           </div>
         </div>
 
-        <div className="h-px bg-white/10 mb-3" />
+        {/* Divider */}
+        <div className="h-px bg-white/6 mb-4" />
 
-        <div className="text-center mb-3">
-          <div className={`text-3xl font-bold tracking-tight ${svColor(all.sv)}`}>
-            {fmtSv(all.sv)}
-          </div>
-          <div className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">
-            Overall SV%
-          </div>
-        </div>
-
-        <div className="flex justify-between mt-2">
-
-          {[{ label: "Shots", value: all.shots },
-            { label: "Saves", value: all.saves },
-            { label: "Pct", value: `${all.pct}th` }
-          ].map(stat => (
-
-            <div key={stat.label} className="text-center">
-              <div className="text-sm font-semibold text-gray-300">
-                {stat.value}
-              </div>
-              <div className="text-[9px] uppercase text-gray-500 tracking-wider">
-                {stat.label}
-              </div>
-            </div>
-
-          ))}
-
-        </div>
-
-        <div className="text-center mt-4 text-[9px] uppercase tracking-wider text-gray-600">
-          Tap for zone map →
-        </div>
-
-      </div>
-    )
-  }
-
-  // MODAL VIEW
-  return (
-    <div
-      onClick={() => setShowZoneMap(false)}
-      className="
-      fixed inset-0
-      z-50
-      flex items-center justify-center
-      bg-black/70
-      backdrop-blur-md
-      "
-    >
-
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="
-        bg-neutral-950
-        border border-white/10
-        rounded-2xl
-        shadow-2xl
-        flex flex-col
-        w-[min(900px,96vw)]
-        max-h-[92vh]
-        overflow-hidden
-        "
-      >
-
-        {/* HEADER */}
-
-        <div className="
-        flex justify-between items-center
-        px-6 py-4
-        border-b border-white/10
-        ">
-
-          <div className="flex items-center gap-3">
-
-            {headshot &&
-              <img
-                src={headshot}
-                className="w-10 h-10 rounded-full border border-white/10"
-              />
-            }
-
-            <div>
-              <div className="text-sm font-semibold text-neutral-100">
-                {firstName} {lastName}
-              </div>
-              <div className="text-[10px] uppercase tracking-wider text-gray-500">
-                Zone Save Map
-              </div>
-            </div>
-
-          </div>
-
-          <button
-            onClick={() => setShowZoneMap(false)}
-            className="
-            w-7 h-7
-            flex items-center justify-center
-            rounded-full
-            bg-white/10
-            text-gray-400
-            hover:bg-white/20
-            "
+        {/* Save % */}
+        <div className="text-center mb-4">
+          <div
+            className="text-3xl font-bold tracking-tight tabular-nums"
+            style={{ color: svColor(sv) }}
           >
-            ×
-          </button>
-
+            {fmtSv(sv)}
+          </div>
+          <div className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">
+            Save %
+          </div>
         </div>
 
-
-        {/* BODY */}
-
-        <div className="flex flex-1 overflow-hidden">
-
-          {/* STATS SIDEBAR */}
-
-          <div className="
-          w-[210px]
-          border-r border-white/10
-          p-4
-          overflow-y-auto
-          ">
-
-            <SectionLabel>High Danger</SectionLabel>
-            <StatRow label="SV%" value={fmtSv(high.sv)} accent={svColor(high.sv)} />
-            <StatRow label="Shots" value={high.shots} />
-            <StatRow label="Percentile" value={`${high.pct}th`} />
-
-            <SectionLabel>Mid Range</SectionLabel>
-            <StatRow label="SV%" value={fmtSv(mid.sv)} accent={svColor(mid.sv)} />
-            <StatRow label="Shots" value={mid.shots} />
-            <StatRow label="Percentile" value={`${mid.pct}th`} />
-
-            <SectionLabel>Long Range</SectionLabel>
-            <StatRow label="SV%" value={fmtSv(long.sv)} accent={svColor(long.sv)} />
-            <StatRow label="Shots" value={long.shots} />
-            <StatRow label="Percentile" value={`${long.pct}th`} />
-
-            <SectionLabel>Weakest Zone</SectionLabel>
-
-            <div className="
-            bg-red-500/10
-            border border-red-500/20
-            rounded-lg
-            p-3 mt-2
-            ">
-
-              <div className="text-sm font-semibold mb-2 text-neutral-100">
-                {weak.name}
-              </div>
-
-              <StatRow label="SV%" value={fmtSv(weak.sv)} accent={svColor(weak.sv)} />
-              <StatRow label="Saves" value={weak.saves} />
-              <StatRow label="Percentile" value={`${weak.pct}th`} />
-
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2 text-center">
+          {[
+            { label: "Shots", value: shots },
+            { label: "Saves", value: saves },
+            { label: "Pctile", value: `${Math.round(pct * 100)}th` },
+          ].map(({ label, value }) => (
+            <div key={label} className="bg-neutral-800/60 rounded-lg py-2">
+              <div className="text-xs font-semibold text-neutral-200">{value}</div>
+              <div className="text-[9px] text-neutral-500 uppercase tracking-wider mt-0.5">{label}</div>
             </div>
-
-          </div>
-
-          {/* ZONE MAP */}
-
-          <div className="flex-1 p-6 overflow-y-auto">
-
-            <ZoneMapModel
-              isOpen={showZoneMap}
-              onClose={() => setShowZoneMap(false)}
-              shotData={shotLocoDetails}
-              goalieInfo={{ firstName, lastName, headshot, teamLogo }}
-            />
-
-          </div>
-
+          ))}
         </div>
 
+        {/* CTA */}
+        <div className="mt-4 text-center text-[9px] text-neutral-600 uppercase tracking-wider group-hover:text-neutral-400 transition-colors">
+          View zone map →
+        </div>
       </div>
 
-    </div>
+      {showModal && (
+        <GoalieModal
+          data={data}
+          firstName={firstName}
+          lastName={lastName}
+          headshot={headshot}
+          teamLogo={teamLogo}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+    </>
   )
 }
 

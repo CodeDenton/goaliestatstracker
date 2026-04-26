@@ -1,88 +1,46 @@
-// Home.tsx
-import Goalie from "./Goalie";
-
-interface GoalieType {
-  player: {
-    id: number;
-    firstName: { default: string };
-    lastName: { default: string };
-    savePctg: number;
-    headshot: string;
-  };
-}
+import GoalieGrid from "@/components/GoalieGrid"
 
 const Home = async () => {
-  // const res = await fetch("http://localhost:8080/api/goalies", { cache: "no-store" });
-  // cache for 1 hour
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/goalies`, { 
-    next: { revalidate: 3600 }
-  });
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/goalies`, {
+    next: { revalidate: 3600 },
+  })
 
-  if (!res.ok) {
-    throw new Error(`API failed with ${res.status}`);
-  }
+  if (!res.ok) throw new Error(`API failed with ${res.status}`)
 
-  const data: GoalieType[] = await res.json();
+  const data = await res.json()
 
-  const totalGoalies = data.length;
-  const avgSavePctg = data.reduce((sum, g) => sum + (g.player.savePctg ?? 0), 0) / totalGoalies;
-
-  const sorted = data.sort((a, b) => (b.player.savePctg ?? 0) - (a.player.savePctg ?? 0));
+  // const totalGoalies = data.length
+  // const avgSavePctg = data.reduce((sum: number, g: any) => sum + (g.player.savePctg ?? 0), 0) / totalGoalies
+  const sorted = [...data].sort((a: any, b: any) => (b.player.savePctg ?? 0) - (a.player.savePctg ?? 0))
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
 
-      {/* HERO / DASHBOARD OVERVIEW */}
-      <header className="max-w-7xl mx-auto px-6 pt-10 pb-8">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-neutral-100">
-          Advanced NHL goalie analytics
+      {/* Hero */}
+      <header className="max-w-7xl mx-auto px-6 pt-10 pb-6">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-neutral-100">
+          NHL Goalie Analytics
         </h1>
-        <p className="text-sm md:text-base text-neutral-400 mt-2 max-w-2xl">
-          Track shot maps, danger zones, save metrics, and zone performance all in one place.
+        <p className="text-sm text-neutral-500 mt-1.5 max-w-xl">
+          Zone save maps, shot heatmaps, and performance metrics for every goalie this season.
         </p>
-
-        {/* Dashboard Stats Row */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="bg-neutral-900/70 border border-white/10 rounded-xl p-6 text-center hover:shadow-lg transition-shadow">
-            <div className="text-2xl font-bold text-green-500">
-              {(avgSavePctg).toFixed(3)}%
-            </div>
-            <div className="mt-1 text-xs text-neutral-400 uppercase tracking-wide">Average SV%</div>
-          </div>
-          <div className="bg-neutral-900/70 border border-white/10 rounded-xl p-6 text-center hover:shadow-lg transition-shadow">
-            <div className="text-2xl font-bold text-blue-400">{totalGoalies}</div>
-            <div className="mt-1 text-xs text-neutral-400 uppercase tracking-wide">Goalies</div>
-          </div>
-          <div className="bg-neutral-900/70 border border-white/10 rounded-xl p-6 text-center hover:shadow-lg transition-shadow">
-            <div className="text-2xl font-bold text-yellow-400">25-26</div>
-            <div className="mt-1 text-xs text-neutral-400 uppercase tracking-wide">Season</div>
-          </div>
-        </div>
       </header>
 
-      {/* GOALIE GRID */}
-      <section className="max-w-7xl mx-auto px-6 pb-16">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-sm font-semibold tracking-wider uppercase text-neutral-400">
-            Goalie Analytics
-          </h2>
-        </div>
+      {/* Stats + Filter + Grid */}
+      <GoalieGrid
+        goalies={sorted}
+        // avgSavePctg={avgSavePctg}
+        // totalGoalies={totalGoalies}
+      />
 
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-6">
-          {sorted.map((g) => (
-            <Goalie key={g.player.id} data={g} />
-          ))}
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="border-t border-white/10 bg-neutral-950/80 backdrop-blur py-6">
-        <div className="max-w-7xl mx-auto px-6 text-center text-xs text-neutral-400">
-          © 2026 CreaseVision · Data via NHL API
+      {/* Footer */}
+      <footer className="border-t border-white/6 py-5">
+        <div className="max-w-7xl mx-auto px-6 text-center text-xs text-neutral-600">
+          © 2026 CreaseVision · Data via NHL Public API
         </div>
       </footer>
     </main>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home
