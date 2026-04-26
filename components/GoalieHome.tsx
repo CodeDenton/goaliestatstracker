@@ -2,7 +2,7 @@ import GoalieGrid from "@/components/GoalieGrid"
 
 const Home = async () => {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/goalies`, {
-    next: { revalidate: 86400 }, // once every 24 hours
+    next: { revalidate: 604800 }, // once every 7 days
   })
 
   if (!res.ok) throw new Error(`API failed with ${res.status}`)

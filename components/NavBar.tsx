@@ -13,7 +13,7 @@ const Navbar = () => {
           <div className="flex items-center gap-8 text-sm text-neutral-400">
             <a href="/" className="hover:text-neutral-100 transition-colors">Goalies</a>
             <a href="/analyst" className="hover:text-neutral-100 transition-colors">AI Analyst</a>
-            <a href="#" className="hover:text-neutral-100 transition-colors">About</a>
+            <a href="/about" className="hover:text-neutral-100 transition-colors">About</a>
           </div>
         </div>
       </nav>

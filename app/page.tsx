@@ -1,8 +1,8 @@
-import Home from "@/components/Home"
+import GoalieHome from "@/components/GoalieHome"
 
 const page = () => {
   return (
-    <Home></Home>
+    <GoalieHome/>
   )
 }
 
