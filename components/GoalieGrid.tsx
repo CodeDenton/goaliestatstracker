@@ -45,7 +45,7 @@ const GoalieGrid = ({ goalies, avgSavePctg, totalGoalies }: any) => {
         </div>
       </div>
 
-      {/* Search + Sort */}
+      {/* Search and Sort */}
       <div className="max-w-7xl mx-auto px-6 pt-6 pb-2 flex items-center gap-3">
         <input
           type="text"

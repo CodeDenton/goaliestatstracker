@@ -111,7 +111,7 @@ const Goalie = ({ data, rank, sortBy }: any) => {
           ))}
         </div>
 
-        {/* CTA */}
+        {/* View Zone Map */}
         <div className="mt-4 text-center text-[9px] text-neutral-600 uppercase tracking-wider group-hover:text-neutral-400 transition-colors">
           View zone map →
         </div>
