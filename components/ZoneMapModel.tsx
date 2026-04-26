@@ -3,6 +3,7 @@
 import { useState } from "react"
 
 interface ZoneMapModelProps {
+  mode: 'save' | 'shot'
   isOpen: boolean
   onClose: () => void
   shotData: any[]
@@ -14,9 +15,16 @@ interface ZoneMapModelProps {
   }
 }
 
-const ZoneMapModel = ({ isOpen, onClose, shotData, goalieInfo }: ZoneMapModelProps) => {
+const ZoneMapModel = ({ mode, isOpen, onClose, shotData, goalieInfo }: ZoneMapModelProps) => {
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
+
+  const shots = (d: any) => {
+    if (d.savePctg === 0 || d.saves === 0) return 0
+    return Math.round(d.saves / d.savePctg)
+  }
+
+  const modeStat = mode === 'save' ? 'savePctg' : 'shots'
 
   if (!isOpen) return null
 
@@ -35,25 +43,26 @@ const ZoneMapModel = ({ isOpen, onClose, shotData, goalieInfo }: ZoneMapModelPro
       savePctg: number
       saves: number
       savePercentile: number
+      shotNum: number
     }
   } = {
-    "Beyond Red Line":        { x:8,   y:8,   width:584, height:50,  savePctg:Number(shotData[1].savePctg.toFixed(3)),  saves:shotData[1].saves,  savePercentile:shotData[1].savePctgPercentile },
-    "Offensive Neutral Zone": { x:8,   y:60,  width:584, height:50,  savePctg:Number(shotData[10].savePctg.toFixed(3)), saves:shotData[10].saves, savePercentile:shotData[10].savePctgPercentile },
-    "Left Point":             { x:8,   y:114, width:185, height:90,  savePctg:Number(shotData[8].savePctg.toFixed(3)),  saves:shotData[8].saves,  savePercentile:shotData[8].savePctgPercentile },
-    "Center Point":           { x:205, y:114, width:190, height:90,  savePctg:Number(shotData[2].savePctg.toFixed(3)),  saves:shotData[2].saves,  savePercentile:shotData[2].savePctgPercentile },
-    "Right Point":            { x:407, y:114, width:185, height:90,  savePctg:Number(shotData[16].savePctg.toFixed(3)), saves:shotData[16].saves, savePercentile:shotData[16].savePctgPercentile },
-    "Outside Left":           { x:8,   y:206, width:185, height:110, savePctg:Number(shotData[11].savePctg.toFixed(3)), saves:shotData[11].saves, savePercentile:shotData[11].savePctgPercentile },
-    "High Slot":              { x:205, y:206, width:190, height:110, savePctg:Number(shotData[4].savePctg.toFixed(3)),  saves:shotData[4].saves,  savePercentile:shotData[4].savePctgPercentile },
-    "Outside Right":          { x:407, y:206, width:185, height:110, savePctg:Number(shotData[12].savePctg.toFixed(3)), saves:shotData[12].saves, savePercentile:shotData[12].savePctgPercentile },
-    "Left Circle":            { x:8,   y:318, width:185, height:110, savePctg:Number(shotData[5].savePctg.toFixed(3)),  saves:shotData[5].saves,  savePercentile:shotData[5].savePctgPercentile },
-    "Low Slot":               { x:205, y:318, width:190, height:110, savePctg:Number(shotData[9].savePctg.toFixed(3)),  saves:shotData[9].saves,  savePercentile:shotData[9].savePctgPercentile },
-    "Right Circle":           { x:407, y:318, width:185, height:110, savePctg:Number(shotData[13].savePctg.toFixed(3)), saves:shotData[13].saves, savePercentile:shotData[13].savePctgPercentile },
-    "Left Corner":            { x:8,   y:430, width:130, height:110, savePctg:Number(shotData[6].savePctg.toFixed(3)),  saves:shotData[6].saves,  savePercentile:shotData[6].savePctgPercentile },
-    "Left Net Side":          { x:140, y:430, width:90,  height:110, savePctg:Number(shotData[7].savePctg.toFixed(3)),  saves:shotData[7].saves,  savePercentile:shotData[7].savePctgPercentile },
-    "Crease":                 { x:240, y:430, width:120,  height:110, savePctg:Number(shotData[3].savePctg.toFixed(3)),  saves:shotData[3].saves,  savePercentile:shotData[3].savePctgPercentile },
-    "Right Net Side":         { x:370, y:430, width:90,  height:110, savePctg:Number(shotData[15].savePctg.toFixed(3)), saves:shotData[15].saves, savePercentile:shotData[15].savePctgPercentile },
-    "Right Corner":           { x:460, y:430, width:130, height:110, savePctg:Number(shotData[14].savePctg.toFixed(3)), saves:shotData[14].saves, savePercentile:shotData[14].savePctgPercentile },
-    "Behind the Net":         { x:8,   y:542, width:584, height:50,  savePctg:Number(shotData[0].savePctg.toFixed(3)),  saves:shotData[0].saves,  savePercentile:shotData[0].savePctgPercentile },
+    "Beyond Red Line": { x: 8, y: 8, width: 584, height: 50, savePctg: Number(shotData[1].savePctg.toFixed(3)), saves: shotData[1].saves, savePercentile: shotData[1].savePctgPercentile, shotNum: shots(shotData[1]) },
+    "Offensive Neutral Zone": { x: 8, y: 60, width: 584, height: 50, savePctg: Number(shotData[10].savePctg.toFixed(3)), saves: shotData[10].saves, savePercentile: shotData[10].savePctgPercentile, shotNum: shots(shotData[10]) },
+    "Left Point": { x: 8, y: 114, width: 185, height: 90, savePctg: Number(shotData[8].savePctg.toFixed(3)), saves: shotData[8].saves, savePercentile: shotData[8].savePctgPercentile, shotNum: shots(shotData[8]) },
+    "Center Point": { x: 205, y: 114, width: 190, height: 90, savePctg: Number(shotData[2].savePctg.toFixed(3)), saves: shotData[2].saves, savePercentile: shotData[2].savePctgPercentile, shotNum: shots(shotData[2]) },
+    "Right Point": { x: 407, y: 114, width: 185, height: 90, savePctg: Number(shotData[16].savePctg.toFixed(3)), saves: shotData[16].saves, savePercentile: shotData[16].savePctgPercentile, shotNum: shots(shotData[16]) },
+    "Outside Left": { x: 8, y: 206, width: 185, height: 110, savePctg: Number(shotData[11].savePctg.toFixed(3)), saves: shotData[11].saves, savePercentile: shotData[11].savePctgPercentile, shotNum: shots(shotData[11]) },
+    "High Slot": { x: 205, y: 206, width: 190, height: 110, savePctg: Number(shotData[4].savePctg.toFixed(3)), saves: shotData[4].saves, savePercentile: shotData[4].savePctgPercentile, shotNum: shots(shotData[4]) },
+    "Outside Right": { x: 407, y: 206, width: 185, height: 110, savePctg: Number(shotData[12].savePctg.toFixed(3)), saves: shotData[12].saves, savePercentile: shotData[12].savePctgPercentile, shotNum: shots(shotData[12]) },
+    "Left Circle": { x: 8, y: 318, width: 185, height: 110, savePctg: Number(shotData[5].savePctg.toFixed(3)), saves: shotData[5].saves, savePercentile: shotData[5].savePctgPercentile, shotNum: shots(shotData[5]) },
+    "Low Slot": { x: 205, y: 318, width: 190, height: 110, savePctg: Number(shotData[9].savePctg.toFixed(3)), saves: shotData[9].saves, savePercentile: shotData[9].savePctgPercentile, shotNum: shots(shotData[9]) },
+    "Right Circle": { x: 407, y: 318, width: 185, height: 110, savePctg: Number(shotData[13].savePctg.toFixed(3)), saves: shotData[13].saves, savePercentile: shotData[13].savePctgPercentile, shotNum: shots(shotData[13]) },
+    "Left Corner": { x: 8, y: 430, width: 130, height: 110, savePctg: Number(shotData[6].savePctg.toFixed(3)), saves: shotData[6].saves, savePercentile: shotData[6].savePctgPercentile, shotNum: shots(shotData[6]) },
+    "Left Net Side": { x: 140, y: 430, width: 90, height: 110, savePctg: Number(shotData[7].savePctg.toFixed(3)), saves: shotData[7].saves, savePercentile: shotData[7].savePctgPercentile, shotNum: shots(shotData[7]) },
+    "Crease": { x: 240, y: 430, width: 120, height: 110, savePctg: Number(shotData[3].savePctg.toFixed(3)), saves: shotData[3].saves, savePercentile: shotData[3].savePctgPercentile, shotNum: shots(shotData[3]) },
+    "Right Net Side": { x: 370, y: 430, width: 90, height: 110, savePctg: Number(shotData[15].savePctg.toFixed(3)), saves: shotData[15].saves, savePercentile: shotData[15].savePctgPercentile, shotNum: shots(shotData[15]) },
+    "Right Corner": { x: 460, y: 430, width: 130, height: 110, savePctg: Number(shotData[14].savePctg.toFixed(3)), saves: shotData[14].saves, savePercentile: shotData[14].savePctgPercentile, shotNum: shots(shotData[14]) },
+    "Behind the Net": { x: 8, y: 542, width: 584, height: 50, savePctg: Number(shotData[0].savePctg.toFixed(3)), saves: shotData[0].saves, savePercentile: shotData[0].savePctgPercentile, shotNum: shots(shotData[0]) },
   }
 
   const getZoneColor = (pctg: number, noData = false) => {
@@ -172,7 +181,10 @@ const ZoneMapModel = ({ isOpen, onClose, shotData, goalieInfo }: ZoneMapModelPro
                   fontWeight="800"
                   fontFamily="monospace"
                 >
-                  {noData ? "N/A" : `.${String(Math.round(pos.savePctg * 1000)).padStart(3, "0")}`}
+                  {mode === 'save'
+                    ? noData ? "N/A" : `.${String(Math.round(pos.savePctg * 1000)).padStart(3, "0")}`
+                    : pos.shotNum === 0 ? "N/A" : `${pos.shotNum}`
+                  }
                 </text>
 
                 {/* Saves count */}
@@ -184,7 +196,11 @@ const ZoneMapModel = ({ isOpen, onClose, shotData, goalieInfo }: ZoneMapModelPro
                     fill={noData ? "#3f3f46" : darkText ? "#11182755" : "#ffffff44"}
                     fontSize="8.5"
                   >
-                    {noData ? "no data" : `${pos.saves} sv`}
+                    {mode === 'save'
+                    ? noData ? "no data": `${pos.saves} sv`
+                    : pos.shotNum === 0 ? "N/A" : `${pos.shotNum - pos.saves} goals`
+                  }
+                    
                   </text>
                 )}
               </g>

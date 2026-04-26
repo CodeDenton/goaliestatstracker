@@ -44,7 +44,7 @@ const GoalieGrid = ({ goalies, avgSavePctg, totalGoalies }: any) => {
         <div className="w-px h-3 bg-white/10" />
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-neutral-500">Season</span>
-          <span className="text-xs font-semibold text-neutral-200">25–26</span>
+          <span className="text-xs font-semibold text-neutral-200">2025–26 Regular Season</span>
         </div>
       </div>
 

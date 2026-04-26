@@ -2,8 +2,9 @@
 import { useState } from "react"
 import GoalieModal from "./GoalieModal"
 
-const fmtSv = (v: number) =>
-  `.${String(Math.round(v * 1000)).padStart(3, "0")}`
+const fmtSv = (v: number) => v.toFixed(3).substring(1)
+const fmtGAA = (v: number) => v.toFixed(2)
+ 
 
 const svColor = (v: number) =>
   v >= 0.94 ? "#10b981"
@@ -97,12 +98,12 @@ const Goalie = ({ data, rank, sortBy }: any) => {
              style={{ color: sortBy === 'gaa' ? gaaColor(gaa) : sortBy === 'gamesPlayed' ? gpColor(gp) : svColor(sv) }}
           >
             {sortBy === 'gaa'
-              ? gaa.toFixed(2)
+              ? fmtGAA(gaa)
               : sortBy === 'gamesPlayed' ? gp
               : fmtSv(sv)}
           </div>
           <div className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">
-            {sortBy === 'gaa' ? 'GAA' : sortBy === 'savePctg' ? 'Save %' : 'GP'}
+            {sortBy === 'gaa' ? 'Goals Against Avg' : sortBy === 'savePctg' ? 'Save %' : 'Games Played'}
           </div>
         </div>
 

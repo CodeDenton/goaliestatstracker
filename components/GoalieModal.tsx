@@ -1,15 +1,7 @@
 "use client"
+import { useState } from "react"
 import ZoneMapModel from "./ZoneMapModel"
 
-const fmtSv = (v: number) =>
-  `.${String(Math.round(v * 1000)).padStart(3, "0")}`
-
-const svColor = (v: number) =>
-  v >= 0.94 ? "#10b981"
-  : v >= 0.91 ? "#34d399"
-  : v >= 0.89 ? "#fbbf24"
-  : v >= 0.86 ? "#f97316"
-  : "#ef4444"
 
 interface GoalieModalProps {
   data: any
@@ -19,6 +11,16 @@ interface GoalieModalProps {
   teamLogo: string
   onClose: () => void
 }
+
+const fmtSv = (v: number) => v.toFixed(3).substring(1)
+
+const svColor = (v: number) =>
+  v >= 0.94 ? "#10b981"
+  : v >= 0.91 ? "#34d399"
+  : v >= 0.89 ? "#fbbf24"
+  : v >= 0.86 ? "#f97316"
+  : "#ef4444"
+
 
 const StatBlock = ({ label, value, color }: { label: string; value: string | number; color?: string }) => (
   <div className="flex justify-between items-center py-2.5 border-b border-neutral-800/60 last:border-0">
@@ -36,6 +38,9 @@ const SectionHeader = ({ children }: { children: string }) => (
 )
 
 const GoalieModal = ({ data, firstName, lastName, headshot, teamLogo, onClose }: GoalieModalProps) => {
+
+  const [mapView, setMapView] = useState<'save' | 'shot'>('save')
+
   const build = (idx: number) => {
     const d = data?.shotLocationSummary?.[idx]
     const ga = d?.goalsAgainst ?? 0
@@ -93,6 +98,26 @@ const GoalieModal = ({ data, firstName, lastName, headshot, teamLogo, onClose }:
                 Zone Save Map
               </div>
             </div>
+            <button
+            onClick={() => setMapView('save')}
+            className={`px-4 py-2 rounded-lg text-[11px] font-semibold tracking-wide transition-all ${
+              mapView === 'save'
+                ? 'bg-neutral-100 text-neutral-900'
+                : 'bg-neutral-800/60 text-neutral-400 hover:bg-neutral-700/60 hover:text-neutral-200'
+            }`}
+          >
+            Save % Map
+          </button>
+          <button
+            onClick={() => setMapView('shot')}
+            className={`px-4 py-2 rounded-lg text-[11px] font-semibold tracking-wide transition-all ${
+              mapView === 'shot'
+                ? 'bg-neutral-100 text-neutral-900'
+                : 'bg-neutral-800/60 text-neutral-400 hover:bg-neutral-700/60 hover:text-neutral-200'
+            }`}
+          >
+            Total Shot Map
+          </button>
           </div>
           <button
             onClick={onClose}
@@ -136,6 +161,7 @@ const GoalieModal = ({ data, firstName, lastName, headshot, teamLogo, onClose }:
           {/* Zone map */}
           <div className="flex-1 p-5 overflow-y-auto">
             <ZoneMapModel
+              mode={mapView}
               isOpen={true}
               onClose={onClose}
               shotData={shotLocationDetails}
