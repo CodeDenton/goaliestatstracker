@@ -5,14 +5,15 @@ import Goalie from "./Goalie"
 const GoalieGrid = ({ goalies, avgSavePctg, totalGoalies }: any) => {
   const [selectedTeam, setSelectedTeam] = useState("ALL")
   const [search, setSearch] = useState("")
-  type SortOption = 'savePctg' | 'gaa' | 'gamesPlayed'
+  type SortOption = 'savePctg' | 'gaa' | 'gamesPlayed' | 'wins'
 
   const [sortBy, setSortBy] = useState<SortOption>('savePctg')
 
   const sortedSavePctg = [...(goalies ?? [])].sort((a: any, b: any) => (b.player.savePctg ?? 0) - (a.player.savePctg ?? 0))
   const sortedGAA = [...(goalies ?? [])].sort((a: any, b: any) => (a.player.goalsAgainstAvg ?? 0) - (b.player.goalsAgainstAvg ?? 0))
   const sortedGP = [...(goalies ?? [])].sort((a: any, b: any) => (b.player.gamesPlayed ?? 0) - (a.player.gamesPlayed ?? 0))
-  const sortedGoalies = sortBy === 'savePctg' ? sortedSavePctg : sortBy === 'gaa' ? sortedGAA : sortedGP;
+  const sortedWins = [...(goalies ?? [])].sort((a: any, b: any) => (b.player.wins ?? 0) - (a.player.wins ?? 0))
+  const sortedGoalies = sortBy === 'savePctg' ? sortedSavePctg : sortBy === 'gaa' ? sortedGAA : sortBy == "wins" ? sortedWins : sortedGP;
 
   const teams = ["ALL", ...Array.from(
     new Set((goalies ?? []).map((g: any) => g.player?.team?.abbrev).filter(Boolean))
@@ -87,6 +88,16 @@ const GoalieGrid = ({ goalies, avgSavePctg, totalGoalies }: any) => {
             }`}
           >
             GP
+          </button>
+          <button
+            onClick={() => setSortBy('wins')}
+            className={`px-4 py-2 rounded-lg text-[11px] font-semibold tracking-wide transition-all ${
+              sortBy === 'wins'
+                ? 'bg-neutral-100 text-neutral-900'
+                : 'bg-neutral-800/60 text-neutral-400 hover:bg-neutral-700/60 hover:text-neutral-200'
+            }`}
+          >
+            WINS
           </button>
         </div>
       </div>

@@ -27,6 +27,13 @@ const gpColor = (v: number) =>
   : v >= 20 ? "#f97316"
   : "#ef4444"
 
+const winsColor = (v : number) =>
+  v >= 30 ? "#10b981"
+  : v >= 20 ? "#34d399"
+  : v >= 15 ? "#fbbf24"
+  : v >= 10 ? "#f97316"
+  : "#ef4444"
+
 const Goalie = ({ data, rank, sortBy }: any) => {
 
   //View goalie JSON
@@ -47,6 +54,7 @@ const Goalie = ({ data, rank, sortBy }: any) => {
 
   const gaa = data?.player?.goalsAgainstAvg ?? 0
   const gp = data?.player?.gamesPlayed ?? 0
+  const wins = data?.player?.wins ?? 0
 
 
   return (
@@ -95,15 +103,16 @@ const Goalie = ({ data, rank, sortBy }: any) => {
         <div className="text-center mb-4">
           <div
             className="text-3xl font-bold tracking-tight tabular-nums"
-             style={{ color: sortBy === 'gaa' ? gaaColor(gaa) : sortBy === 'gamesPlayed' ? gpColor(gp) : svColor(sv) }}
+             style={{ color: sortBy === 'gaa' ? gaaColor(gaa) : sortBy === 'gamesPlayed' ? gpColor(gp) : sortBy === "savePctg" ? svColor(sv) : winsColor(wins)}}
           >
             {sortBy === 'gaa'
               ? fmtGAA(gaa)
               : sortBy === 'gamesPlayed' ? gp
+              : sortBy === 'wins' ? wins
               : fmtSv(sv)}
           </div>
           <div className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">
-            {sortBy === 'gaa' ? 'Goals Against Avg' : sortBy === 'savePctg' ? 'Save %' : 'Games Played'}
+            {sortBy === 'gaa' ? 'Goals Against Avg' : sortBy === 'savePctg' ? 'Save %' : sortBy === 'gamesPlayed' ? 'Games Played' : 'Wins'}
           </div>
         </div>
 
