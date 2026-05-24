@@ -37,7 +37,7 @@ const winsColor = (v : number) =>
 const Goalie = ({ data, rank, sortBy }: any) => {
 
   //View goalie JSON
-  console.log(data)
+  // console.log(data)
 
   const [showModal, setShowModal] = useState(false)
 
