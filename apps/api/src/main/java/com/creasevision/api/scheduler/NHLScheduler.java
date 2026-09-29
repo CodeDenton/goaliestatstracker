@@ -29,7 +29,7 @@ public class NHLScheduler {
     private final GoalieRepository goalieRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final String SEASON = "20252026";
+    private static final String SEASON = System.getenv().getOrDefault("NHL_SEASON", "20262027");
     private static final String SITUATION = "2";
 
     private static final List<String> TEAMS = List.of(
@@ -48,13 +48,15 @@ public class NHLScheduler {
     public void fetchAndSaveGoalies() {
         System.out.println("Fetching goalies directly from NHL API...");
         try {
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
 
             //fetch all goalie IDs from every roster
             List<CompletableFuture<String>> rosterFutures = TEAMS.stream()
                 .map(team -> client.sendAsync(
                     HttpRequest.newBuilder()
-                        .uri(URI.create("https://api-web.nhle.com/v1/roster/" + team + "/current"))
+                        .uri(URI.create("https://api-web.nhle.com/v1/roster/" + team + "/" + SEASON))
                         .GET()
                         .build(),
                     HttpResponse.BodyHandlers.ofString()
