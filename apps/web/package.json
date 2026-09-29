@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "backend": "cd ../backend && uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
+    "backend": "cd ../api && ./mvnw spring-boot:run",
     "dev:all": "concurrently \"npm run dev\" \"npm run backend\"",
     "build": "next build",
     "start": "next start",
