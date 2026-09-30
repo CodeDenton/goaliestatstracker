@@ -49,4 +49,4 @@ cd apps/api
 ./mvnw spring-boot:run -Dspring-boot.run.arguments="--nhl.import-season=20232024"
 ```
 
-Do not use historical imports for production backfills until team-split validation is complete. The first importer establishes the repeatable write and audit path; validating traded-goalie source coverage is tracked in Issue #8.
+Historical imports use NHL regular-season goalie/team-split rows. Each row is upserted as one goalie-team stint, so traded goalies retain a separate statistical line for every team.

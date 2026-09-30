@@ -17,6 +17,8 @@ public class GoalieSeasonStats {
     private int wins;
     private int losses;
     private int overtimeLosses;
+    private Integer shotsAgainst;
+    private Integer saves;
     private Double goalsAgainstAvg;
     private Double savePctg;
     private String sourceName;

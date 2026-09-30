@@ -10,11 +10,12 @@ public class JpaGoalieProfileStore implements GoalieProfileStore {
     public JpaGoalieProfileStore(GoalieRepository goalies) { this.goalies = goalies; }
     public void saveProfile(Goalie imported) {
         Goalie stored = goalies.findById(imported.getId()).orElseGet(Goalie::new);
-        stored.setId(imported.getId()); stored.setFirstName(imported.getFirstName()); stored.setLastName(imported.getLastName());
-        stored.setHeadshot(imported.getHeadshot()); stored.setHeightCm(imported.getHeightCm()); stored.setWeightKg(imported.getWeightKg());
-        stored.setCatches(imported.getCatches()); stored.setBirthDate(imported.getBirthDate()); stored.setBirthCity(imported.getBirthCity());
-        stored.setBirthStateProvince(imported.getBirthStateProvince()); stored.setBirthCountry(imported.getBirthCountry());
-        stored.setNationality(imported.getNationality()); stored.setPositionCode(imported.getPositionCode()); stored.setProfileUpdatedAt(imported.getProfileUpdatedAt());
+        stored.setId(imported.getId());
+        if (imported.getFirstName()!=null) stored.setFirstName(imported.getFirstName()); if (imported.getLastName()!=null) stored.setLastName(imported.getLastName());
+        if (imported.getHeadshot()!=null) stored.setHeadshot(imported.getHeadshot()); if (imported.getHeightCm()!=null) stored.setHeightCm(imported.getHeightCm()); if (imported.getWeightKg()!=null) stored.setWeightKg(imported.getWeightKg());
+        if (imported.getCatches()!=null) stored.setCatches(imported.getCatches()); if (imported.getBirthDate()!=null) stored.setBirthDate(imported.getBirthDate()); if (imported.getBirthCity()!=null) stored.setBirthCity(imported.getBirthCity());
+        if (imported.getBirthStateProvince()!=null) stored.setBirthStateProvince(imported.getBirthStateProvince()); if (imported.getBirthCountry()!=null) stored.setBirthCountry(imported.getBirthCountry());
+        if (imported.getNationality()!=null) stored.setNationality(imported.getNationality()); if (imported.getPositionCode()!=null) stored.setPositionCode(imported.getPositionCode()); if (imported.getProfileUpdatedAt()!=null) stored.setProfileUpdatedAt(imported.getProfileUpdatedAt());
         goalies.save(stored);
     }
 }

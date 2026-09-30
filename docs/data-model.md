@@ -31,4 +31,4 @@ Flyway owns the production schema. Hibernate runs with `ddl-auto=validate`, whic
 
 The first Flyway migration records the legacy Hibernate schema. For the existing Supabase database, Flyway baselines at version 1 and then applies version 2, retaining the current 2026-27 snapshot. Fresh databases apply both migrations normally.
 
-The current NHL importer still writes the legacy current-season snapshot, and now also fills the stable goalie biography fields from NHL roster data. The ingestion follow-up will write `goalie_team_stints` and `goalie_season_stats` directly, then backfill prior seasons. Until then, the version-2 tables are a safe foundation rather than the API's active read model.
+The current NHL importer still writes the legacy current-season snapshot and fills stable goalie biography fields from NHL roster data. Deliberate historical season imports read regular-season goalie/team-split rows and upsert `goalie_team_stints` plus `goalie_season_stats`; playoff and aggregate rows are excluded.

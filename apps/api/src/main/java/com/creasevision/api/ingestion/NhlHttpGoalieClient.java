@@ -93,6 +93,60 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
         return goalies;
     }
 
+    @Override
+    public List<NhlGoalieSeasonRow> fetchRegularSeasonTeamSplits(String season) {
+        try {
+            List<NhlGoalieSeasonRow> rows = new ArrayList<>();
+            for (JsonNode team : getJson("https://api.nhle.com/stats/rest/en/team").path("data")) {
+                int teamId = team.path("id").asInt();
+                String abbreviation = firstText(team, "triCode", "rawTricode");
+                if (teamId <= 0 || abbreviation == null) continue;
+                JsonNode response = getJson("https://api.nhle.com/stats/rest/en/goalie/summary?limit=10000"
+                        + "&cayenneExp=seasonId%3D" + season + "%20and%20gameTypeId%3D2%20and%20teamId%3D" + teamId);
+                rows.addAll(toRegularSeasonTeamSplits(response, abbreviation, firstText(team, "fullName")));
+            }
+            return rows;
+        } catch (IOException exception) {
+            throw new IllegalStateException("Could not fetch NHL goalie team splits for " + season, exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("NHL goalie team-split import was interrupted", exception);
+        }
+    }
+
+    /** Maps only regular-season, single-team lines; aggregate and playoff rows are not importable stints. */
+    List<NhlGoalieSeasonRow> toRegularSeasonTeamSplits(JsonNode response) {
+        return toRegularSeasonTeamSplits(response, null, null);
+    }
+
+    private List<NhlGoalieSeasonRow> toRegularSeasonTeamSplits(JsonNode response, String requestedTeam, String requestedTeamName) {
+        List<NhlGoalieSeasonRow> rows = new ArrayList<>();
+        for (JsonNode value : response.path("data")) {
+            if (value.path("gameTypeId").asInt() != 2) continue;
+            String team = requestedTeam == null ? firstText(value, "teamAbbrevs", "teamAbbrev") : requestedTeam;
+            if (team == null || team.contains(",")) continue;
+            long goalieId = value.path("playerId").asLong();
+            if (goalieId <= 0) continue;
+            String fullName = firstText(value, "goalieFullName", "playerName");
+            String[] names = fullName == null ? new String[] { null, null } : fullName.trim().split("\\s+", 2);
+            rows.add(new NhlGoalieSeasonRow(
+                    goalieId,
+                    names.length > 0 ? names[0] : null,
+                    names.length > 1 ? names[1] : null,
+                    team,
+                    requestedTeamName == null ? (firstText(value, "teamName") == null ? team : firstText(value, "teamName")) : requestedTeamName,
+                    integerOrNull(value, "gamesPlayed"),
+                    integerOrNull(value, "wins"),
+                    integerOrNull(value, "losses"),
+                    integerOrNull(value, "otLosses", "overtimeLosses"),
+                    integerOrNull(value, "saves"),
+                    integerOrNull(value, "shotsAgainst"),
+                    doubleOrNull(value, "goalsAgainstAverage", "goalsAgainstAvg"),
+                    doubleOrNull(value, "savePct", "savePctg")));
+        }
+        return rows;
+    }
+
     private JsonNode getJson(String url) throws IOException, InterruptedException {
         IOException lastFailure = null;
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -160,6 +214,21 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
 
     private Integer integerOrNull(JsonNode node, String field) {
         return node.hasNonNull(field) ? node.path(field).asInt() : null;
+    }
+
+    private Integer integerOrNull(JsonNode node, String... fields) {
+        for (String field : fields) if (node.hasNonNull(field)) return node.path(field).asInt();
+        return null;
+    }
+
+    private Double doubleOrNull(JsonNode node, String... fields) {
+        for (String field : fields) if (node.hasNonNull(field)) return node.path(field).asDouble();
+        return null;
+    }
+
+    private String firstText(JsonNode node, String... fields) {
+        for (String field : fields) if (node.hasNonNull(field) && !node.path(field).asText().isBlank()) return node.path(field).asText();
+        return null;
     }
 
     private String textOrNull(JsonNode node, String field) {

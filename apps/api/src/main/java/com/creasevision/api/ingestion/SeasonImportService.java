@@ -21,21 +21,22 @@ public class SeasonImportService {
     public SeasonImportResult importSeason(String id) {
         ensureSeason(id); ImportRun run = new ImportRun(); run.setImportType("GOALIE_SEASON_STATS"); run.setSeasonId(id); run.setStartedAt(OffsetDateTime.now()); run.setStatus("RUNNING"); run=runs.save(run);
         try {
-            List<Goalie> imported=nhl.fetchGoalies(id, config.getSituation());
+            List<NhlGoalieSeasonRow> imported=nhl.fetchRegularSeasonTeamSplits(id);
             if(imported.isEmpty()) return complete(run,"FAILED",0,0,"The NHL API returned no goalies.");
-            int writes=0; for(Goalie goalie:imported) writes+=save(goalie,id);
+            int writes=0; for(NhlGoalieSeasonRow row:imported) writes+=save(row,id);
             return complete(run,"SUCCEEDED",imported.size(),writes,null);
         } catch(RuntimeException e) { return complete(run,"FAILED",0,0,e.getMessage()); }
     }
-    private int save(Goalie goalie,String seasonId) {
-        if(goalie.getId()==null||goalie.getTeamAbbrev()==null||goalie.getTeamAbbrev().isBlank()) return 0;
+    private int save(NhlGoalieSeasonRow row,String seasonId) {
+        if(row.goalieId()==null||row.teamAbbreviation()==null||row.teamAbbreviation().isBlank()) return 0;
+        Goalie goalie=new Goalie(); goalie.setId(row.goalieId()); goalie.setFirstName(row.goalieFirstName()); goalie.setLastName(row.goalieLastName());
         profiles.saveProfile(goalie);
-        Team team=teams.findByAbbreviation(goalie.getTeamAbbrev()).orElseGet(Team::new);
-        team.setAbbreviation(goalie.getTeamAbbrev()); team.setCommonName(goalie.getTeamName()); team.setLogoLightUrl(goalie.getTeamLogoLight()); team.setLogoDarkUrl(goalie.getTeamLogoDark()); team=teams.save(team);
-        GoalieTeamStint stint=stints.findByGoalieIdAndSeasonIdAndTeamIdAndStintNumber(goalie.getId(),seasonId,team.getId(),(short)1).orElseGet(GoalieTeamStint::new);
-        stint.setGoalieId(goalie.getId()); stint.setSeasonId(seasonId); stint.setTeamId(team.getId()); stint.setStintNumber((short)1); stint.setSweaterNumber(goalie.getSweaterNumber()); stint.setSourceName("NHL API"); stint.setSourceUpdatedAt(OffsetDateTime.now()); stint=stints.save(stint);
+        Team team=teams.findByAbbreviation(row.teamAbbreviation()).orElseGet(Team::new);
+        team.setAbbreviation(row.teamAbbreviation()); team.setCommonName(row.teamName()); team=teams.save(team);
+        GoalieTeamStint stint=stints.findByGoalieIdAndSeasonIdAndTeamIdAndStintNumber(row.goalieId(),seasonId,team.getId(),(short)1).orElseGet(GoalieTeamStint::new);
+        stint.setGoalieId(row.goalieId()); stint.setSeasonId(seasonId); stint.setTeamId(team.getId()); stint.setStintNumber((short)1); stint.setSourceName("NHL API"); stint.setSourceUpdatedAt(OffsetDateTime.now()); stint=stints.save(stint);
         GoalieSeasonStats line=stats.findByTeamStintId(stint.getId()).orElseGet(GoalieSeasonStats::new);
-        line.setTeamStintId(stint.getId()); line.setGamesPlayed(zero(goalie.getGamesPlayed())); line.setWins(zero(goalie.getWins())); line.setLosses(zero(goalie.getLosses())); line.setOvertimeLosses(zero(goalie.getOvertimeLosses())); line.setGoalsAgainstAvg(goalie.getGoalsAgainstAvg()); line.setSavePctg(goalie.getSavePctg()); line.setSourceName("NHL API"); line.setSourceUpdatedAt(OffsetDateTime.now()); stats.save(line); return 1;
+        line.setTeamStintId(stint.getId()); line.setGamesPlayed(zero(row.gamesPlayed())); line.setWins(zero(row.wins())); line.setLosses(zero(row.losses())); line.setOvertimeLosses(zero(row.overtimeLosses())); line.setSaves(row.saves()); line.setShotsAgainst(row.shotsAgainst()); line.setGoalsAgainstAvg(row.goalsAgainstAvg()); line.setSavePctg(row.savePctg()); line.setSourceName("NHL API"); line.setSourceUpdatedAt(OffsetDateTime.now()); stats.save(line); return 1;
     }
     private void ensureSeason(String id) {
         if(!id.matches("\\d{8}")) throw new IllegalArgumentException("Season must use the NHL format YYYYYYYY."); int start=Integer.parseInt(id.substring(0,4)); int end=Integer.parseInt(id.substring(4)); if(end!=start+1) throw new IllegalArgumentException("Season years must be consecutive.");
