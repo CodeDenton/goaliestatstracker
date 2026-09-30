@@ -8,6 +8,8 @@ public class NhlImportProperties {
     private String season = "20262027";
     private String situation = "2";
     private String importSeason;
+    private String importSeasons;
+    private Long importGameId;
     private boolean refreshOnStartup = true;
 
     public String getSeason() {
@@ -33,6 +35,18 @@ public class NhlImportProperties {
     public void setImportSeason(String importSeason) {
         this.importSeason = importSeason;
     }
+
+    public String getImportSeasons() {
+        return importSeasons;
+    }
+
+    public void setImportSeasons(String importSeasons) {
+        this.importSeasons = importSeasons;
+    }
+
+    public Long getImportGameId() { return importGameId; }
+
+    public void setImportGameId(Long importGameId) { this.importGameId = importGameId; }
 
     public boolean isRefreshOnStartup() {
         return refreshOnStartup;

@@ -70,4 +70,31 @@ class NhlHttpGoalieClientTest {
                 NhlGoalieSeasonRow::shotsAgainst, NhlGoalieSeasonRow::goalsAgainstAvg, NhlGoalieSeasonRow::savePctg)
                 .containsExactly(42, 1057, 1149, 2.76, .920);
     }
+
+    @Test
+    void mapsGoaliesFromOneCompletedGameBoxscore() throws Exception {
+        List<NhlGoalieGameRow> rows = client.toGoalieGameRows(objectMapper.readTree("""
+                { "id": 2025020001, "season": "20252026", "gameDate": "2025-10-07", "gameType": 2, "gameState": "OFF",
+                  "homeTeam": { "abbrev": "PIT", "score": 3 }, "awayTeam": { "abbrev": "EDM", "score": 2 },
+                  "playerByGameStats": {
+                    "homeTeam": { "goalies": [{ "playerId": 8477465, "starter": true, "decision": "W", "toi": "60:00", "saveShotsAgainst": "25/27", "goalsAgainst": 2 }] },
+                    "awayTeam": { "goalies": [{ "playerId": 8479973, "starter": true, "decision": "L", "toi": "58:44", "saveShotsAgainst": "28/31", "goalsAgainst": 3 }] }
+                  } }
+                """));
+        assertThat(rows).hasSize(2);
+        assertThat(rows.getFirst()).extracting(NhlGoalieGameRow::gameId, NhlGoalieGameRow::team, NhlGoalieGameRow::saves, NhlGoalieGameRow::shotsAgainst, NhlGoalieGameRow::timeOnIceSeconds)
+                .containsExactly(2025020001L, "PIT", 25, 27, 3600);
+    }
+
+    @Test
+    void aggregatesPlayByPlayShotsIntoGoalieZones() throws Exception {
+        List<NhlShotZoneRow> rows=client.toShotZoneRows(objectMapper.readTree("""
+                {"id":2025020001,"season":"20252026","homeTeam":{"id":5,"abbrev":"PIT"},"awayTeam":{"abbrev":"EDM"},"plays":[
+                  {"typeDescKey":"shot-on-goal","details":{"goalieInNetId":8477465,"eventOwnerTeamId":22,"xCoord":80,"yCoord":4}},
+                  {"typeDescKey":"goal","details":{"goalieInNetId":8477465,"eventOwnerTeamId":22,"xCoord":76,"yCoord":8}},
+                  {"typeDescKey":"shot-on-goal","details":{"goalieInNetId":8477465,"eventOwnerTeamId":22,"xCoord":30,"yCoord":30}}
+                ]}"""));
+        assertThat(rows).extracting(NhlShotZoneRow::zoneCode,NhlShotZoneRow::shots,NhlShotZoneRow::saves,NhlShotZoneRow::goals)
+                .containsExactlyInAnyOrder(org.assertj.core.groups.Tuple.tuple("INNER_SLOT",2,1,1),org.assertj.core.groups.Tuple.tuple("PERIMETER",1,1,0));
+    }
 }

@@ -18,4 +18,8 @@ public interface NhlGoalieClient {
      * aggregate or playoff lines.
      */
     List<NhlGoalieSeasonRow> fetchRegularSeasonTeamSplits(String season);
+
+    List<NhlGoalieGameRow> fetchGoalieGameRows(long gameId);
+
+    List<NhlShotZoneRow> fetchShotZoneRows(long gameId);
 }

@@ -49,4 +49,18 @@ cd apps/api
 ./mvnw spring-boot:run -Dspring-boot.run.arguments="--nhl.import-season=20232024"
 ```
 
+For a resumable historical backfill, pass a comma-separated set of NHL season IDs. Each season receives its own import-run audit record; a failed season does not prevent the remaining requested seasons from running.
+
+```bash
+cd apps/api
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--nhl.import-seasons=20232024,20242025"
+```
+
+To validate a single NHL game boxscore before a broader game-log import:
+
+```bash
+cd apps/api
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--nhl.import-game-id=2025020001"
+```
+
 Historical imports use NHL regular-season goalie/team-split rows. Each row is upserted as one goalie-team stint, so traded goalies retain a separate statistical line for every team.
