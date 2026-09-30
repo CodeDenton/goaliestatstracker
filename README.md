@@ -41,3 +41,12 @@ cd apps/api
 ```
 
 NHL refreshes run at 1:00 AM Vancouver time while the API is awake. The service also refreshes on startup; on Render Free, this is the dependable fallback because an in-process scheduler cannot wake a sleeping service. A later external scheduled trigger can call a protected refresh endpoint once that endpoint is introduced.
+
+To run a deliberate one-off season import locally, pass the NHL season ID when starting the API. This command is disabled unless the property is supplied:
+
+```bash
+cd apps/api
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--nhl.import-season=20232024"
+```
+
+Historical imports use NHL regular-season goalie/team-split rows. Each row is upserted as one goalie-team stint, so traded goalies retain a separate statistical line for every team.

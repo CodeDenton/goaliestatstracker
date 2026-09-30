@@ -7,6 +7,7 @@ public class NhlImportProperties {
 
     private String season = "20262027";
     private String situation = "2";
+    private String importSeason;
     private boolean refreshOnStartup = true;
 
     public String getSeason() {
@@ -23,6 +24,14 @@ public class NhlImportProperties {
 
     public void setSituation(String situation) {
         this.situation = situation;
+    }
+
+    public String getImportSeason() {
+        return importSeason;
+    }
+
+    public void setImportSeason(String importSeason) {
+        this.importSeason = importSeason;
     }
 
     public boolean isRefreshOnStartup() {

@@ -11,4 +11,11 @@ import com.creasevision.api.model.Goalie;
 public interface NhlGoalieClient {
 
     List<Goalie> fetchGoalies(String season, String situation);
+
+    /**
+     * Returns one row for every goalie/team combination in the regular season.
+     * Unlike {@link #fetchGoalies(String, String)}, these rows must never be
+     * aggregate or playoff lines.
+     */
+    List<NhlGoalieSeasonRow> fetchRegularSeasonTeamSplits(String season);
 }
