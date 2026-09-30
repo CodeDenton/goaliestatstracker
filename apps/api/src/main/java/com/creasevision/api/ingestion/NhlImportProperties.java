@@ -11,6 +11,7 @@ public class NhlImportProperties {
     private String importSeasons;
     private Long importGameId;
     private boolean refreshOnStartup = true;
+    private String refreshSecret;
 
     public String getSeason() {
         return season;
@@ -55,4 +56,7 @@ public class NhlImportProperties {
     public void setRefreshOnStartup(boolean refreshOnStartup) {
         this.refreshOnStartup = refreshOnStartup;
     }
+
+    public String getRefreshSecret() { return refreshSecret; }
+    public void setRefreshSecret(String refreshSecret) { this.refreshSecret = refreshSecret; }
 }
