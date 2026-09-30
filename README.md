@@ -40,7 +40,19 @@ cd apps/api
 ./mvnw test
 ```
 
-NHL refreshes run at 1:00 AM Vancouver time while the API is awake. The service also refreshes on startup; on Render Free, this is the dependable fallback because an in-process scheduler cannot wake a sleeping service. A later external scheduled trigger can call a protected refresh endpoint once that endpoint is introduced.
+NHL refreshes run at 1:00 AM Vancouver time while the API is awake. The service also refreshes on startup. A refresh is guarded so startup, the in-process scheduler, and an external trigger cannot run imports concurrently.
+
+## Production nightly refresh
+
+The repository workflow [`.github/workflows/nightly-goalie-refresh.yml`](.github/workflows/nightly-goalie-refresh.yml) wakes Render and invokes the protected refresh endpoint. It has two UTC schedules and checks `America/Vancouver` at runtime, so it executes exactly at 1:00 AM across daylight-saving changes.
+
+Configure these values without committing their contents:
+
+- Render environment variable: `NHL_REFRESH_SECRET` — a long random secret used by the API.
+- GitHub Actions secret: `NHL_REFRESH_SECRET` — the same value sent in the `X-Refresh-Secret` header.
+- GitHub Actions secret: `RENDER_REFRESH_URL` — the deployed API base URL, for example `https://creasevision-api.onrender.com`.
+
+`POST /api/internal/refresh` and `GET /api/internal/refresh/latest` both require that header. The latest endpoint reports the last refresh's timestamps, season, records written, status, and error detail, so a maintainer can diagnose a failed run without exposing the endpoint publicly.
 
 To run a deliberate one-off season import locally, pass the NHL season ID when starting the API. This command is disabled unless the property is supplied:
 
