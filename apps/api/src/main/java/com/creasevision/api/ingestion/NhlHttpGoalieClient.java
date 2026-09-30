@@ -6,10 +6,12 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +51,7 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
 
     @Override
     public List<Goalie> fetchGoalies(String season, String situation) {
-        Set<Long> goalieIds = new LinkedHashSet<>();
+        Map<Long, JsonNode> rosterGoalies = new LinkedHashMap<>();
         int successfulRosters = 0;
         for (String team : TEAMS) {
             try {
@@ -57,7 +59,7 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
                 successfulRosters++;
                 for (JsonNode goalie : roster.path("goalies")) {
                     long id = goalie.path("id").asLong();
-                    if (id > 0) goalieIds.add(id);
+                    if (id > 0) rosterGoalies.put(id, goalie);
                 }
             } catch (IOException | InterruptedException exception) {
                 if (exception instanceof InterruptedException) {
@@ -68,13 +70,14 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
             }
         }
         if (successfulRosters == 0) throw new IllegalStateException("No NHL rosters could be fetched for " + season);
-        log.info("Found {} unique goalies across {} NHL rosters for {}.", goalieIds.size(), successfulRosters, season);
+        log.info("Found {} unique goalies across {} NHL rosters for {}.", rosterGoalies.size(), successfulRosters, season);
 
         List<Goalie> goalies = new ArrayList<>();
-        for (Long goalieId : goalieIds) {
+        for (Map.Entry<Long, JsonNode> rosterGoalie : rosterGoalies.entrySet()) {
+            Long goalieId = rosterGoalie.getKey();
             try {
                 Goalie goalie = toGoalie(getJson("https://api-web.nhle.com/v1/edge/goalie-detail/"
-                        + goalieId + "/" + season + "/" + situation));
+                        + goalieId + "/" + season + "/" + situation), rosterGoalie.getValue());
                 if (goalie != null) goalies.add(goalie);
             } catch (IOException | InterruptedException exception) {
                 if (exception instanceof InterruptedException) {
@@ -84,7 +87,7 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
                 log.warn("Could not fetch NHL details for goalie {} in {}: {}", goalieId, season, exception.getMessage());
             }
         }
-        if (!goalieIds.isEmpty() && goalies.isEmpty()) {
+        if (!rosterGoalies.isEmpty() && goalies.isEmpty()) {
             throw new IllegalStateException("NHL returned no usable goalie details for " + season);
         }
         return goalies;
@@ -115,7 +118,7 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
         throw lastFailure;
     }
 
-    private Goalie toGoalie(JsonNode node) {
+    Goalie toGoalie(JsonNode node, JsonNode rosterGoalie) {
         JsonNode player = node.path("player");
         long id = player.path("id").asLong();
         if (id == 0) return null;
@@ -129,6 +132,7 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
         goalie.setTeamName(player.path("team").path("commonName").path("default").asText());
         goalie.setTeamLogoLight(player.path("team").path("teamLogo").path("light").asText());
         goalie.setTeamLogoDark(player.path("team").path("teamLogo").path("dark").asText());
+        applyStableBiography(goalie, rosterGoalie);
         goalie.setWins(player.path("wins").asInt());
         goalie.setLosses(player.path("losses").asInt());
         goalie.setOvertimeLosses(player.path("overtimeLosses").asInt());
@@ -138,6 +142,33 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
         goalie.setShotLocationSummary(toSummaries(node.path("shotLocationSummary"), goalie));
         goalie.setShotLocationDetails(toDetails(node.path("shotLocationDetails"), goalie));
         return goalie;
+    }
+
+    private void applyStableBiography(Goalie goalie, JsonNode rosterGoalie) {
+        if (rosterGoalie == null || rosterGoalie.isMissingNode()) return;
+
+        goalie.setHeightCm(integerOrNull(rosterGoalie, "heightInCentimeters"));
+        goalie.setWeightKg(integerOrNull(rosterGoalie, "weightInKilograms"));
+        goalie.setCatches(textOrNull(rosterGoalie, "shootsCatches"));
+        goalie.setBirthDate(localDateOrNull(rosterGoalie, "birthDate"));
+        goalie.setBirthCity(rosterGoalie.path("birthCity").path("default").asText(null));
+        goalie.setBirthStateProvince(rosterGoalie.path("birthStateProvince").path("default").asText(null));
+        goalie.setBirthCountry(textOrNull(rosterGoalie, "birthCountry"));
+        goalie.setPositionCode(textOrNull(rosterGoalie, "positionCode"));
+        goalie.setProfileUpdatedAt(OffsetDateTime.now());
+    }
+
+    private Integer integerOrNull(JsonNode node, String field) {
+        return node.hasNonNull(field) ? node.path(field).asInt() : null;
+    }
+
+    private String textOrNull(JsonNode node, String field) {
+        return node.hasNonNull(field) ? node.path(field).asText() : null;
+    }
+
+    private LocalDate localDateOrNull(JsonNode node, String field) {
+        String value = textOrNull(node, field);
+        return value == null || value.isBlank() ? null : LocalDate.parse(value);
     }
 
     private List<ShotLocationSummary> toSummaries(JsonNode source, Goalie goalie) {

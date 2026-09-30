@@ -1,5 +1,7 @@
 package com.creasevision.api.model;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -25,6 +27,17 @@ public class Goalie {
     private String teamName;
     private String teamLogoLight;
     private String teamLogoDark;
+
+    private Integer heightCm;
+    private Integer weightKg;
+    private String catches;
+    private LocalDate birthDate;
+    private String birthCity;
+    private String birthStateProvince;
+    private String birthCountry;
+    private String nationality;
+    private String positionCode;
+    private OffsetDateTime profileUpdatedAt;
 
     private Integer wins;
     private Integer losses;
