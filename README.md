@@ -11,7 +11,7 @@ apps/
 docs/         Architecture and product documentation
 ```
 
-Database schema migrations belong in `apps/api/src/main/resources/db/migration/` and are applied by Flyway once it is introduced.
+Database schema migrations live in `apps/api/src/main/resources/db/migration/` and are applied by Flyway on API startup.
 
 ## Local development
 
