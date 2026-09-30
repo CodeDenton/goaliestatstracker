@@ -114,6 +114,57 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
         }
     }
 
+    @Override
+    public List<NhlGoalieGameRow> fetchGoalieGameRows(long gameId) {
+        try {
+            return toGoalieGameRows(getJson("https://api-web.nhle.com/v1/gamecenter/" + gameId + "/boxscore"));
+        } catch (IOException exception) {
+            throw new IllegalStateException("Could not fetch NHL game " + gameId, exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("NHL game import was interrupted", exception);
+        }
+    }
+
+    @Override public List<NhlShotZoneRow> fetchShotZoneRows(long gameId) {
+        try { return toShotZoneRows(getJson("https://api-web.nhle.com/v1/gamecenter/" + gameId + "/play-by-play")); }
+        catch (IOException e) { throw new IllegalStateException("Could not fetch NHL play-by-play for " + gameId,e); }
+        catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException("NHL play-by-play import was interrupted",e); }
+    }
+    List<NhlShotZoneRow> toShotZoneRows(JsonNode game) {
+        Map<String,int[]> totals=new LinkedHashMap<>(); long id=game.path("id").asLong(); String season=game.path("season").asText(); int homeId=game.path("homeTeam").path("id").asInt(); String home=game.path("homeTeam").path("abbrev").asText(); String away=game.path("awayTeam").path("abbrev").asText();
+        for(JsonNode play:game.path("plays")) { String type=play.path("typeDescKey").asText(); if(!type.equals("shot-on-goal")&&!type.equals("goal"))continue; JsonNode d=play.path("details"); long goalie=d.path("goalieInNetId").asLong(); if(goalie<=0)continue; String team=d.path("eventOwnerTeamId").asInt()==homeId?away:home; String zone=zone(d.path("xCoord").asInt(),d.path("yCoord").asInt()); String key=goalie+"|"+team+"|"+zone; int[] count=totals.computeIfAbsent(key,k->new int[3]); count[0]++; if(type.equals("goal"))count[2]++;else count[1]++; }
+        List<NhlShotZoneRow> rows=new ArrayList<>(); totals.forEach((key,count)->{String[] parts=key.split("\\|");rows.add(new NhlShotZoneRow(id,season,Long.valueOf(parts[0]),parts[1],parts[2],count[0],count[1],count[2]));}); return rows;
+    }
+    private String zone(int x,int y) { int distance=(int)Math.hypot(89-Math.abs(x),y); return distance<=20?"INNER_SLOT":distance<=40?"SLOT":"PERIMETER"; }
+
+    List<NhlGoalieGameRow> toGoalieGameRows(JsonNode game) {
+        List<NhlGoalieGameRow> rows = new ArrayList<>();
+        long gameId = game.path("id").asLong();
+        String season = game.path("season").asText();
+        String home = game.path("homeTeam").path("abbrev").asText();
+        String away = game.path("awayTeam").path("abbrev").asText();
+        for (String side : List.of("homeTeam", "awayTeam")) {
+            String team = side.equals("homeTeam") ? home : away;
+            for (JsonNode goalie : game.path("playerByGameStats").path(side).path("goalies")) {
+                long goalieId = goalie.path("playerId").asLong();
+                if (goalieId <= 0 || team.isBlank()) continue;
+                int shots = integerOrNull(goalie, "shotsAgainst") == null ? shotsAgainst(goalie) : integerOrNull(goalie, "shotsAgainst");
+                int saves = integerOrNull(goalie, "saves") == null ? savesFromPair(goalie) : integerOrNull(goalie, "saves");
+                Integer goals = integerOrNull(goalie, "goalsAgainst");
+                rows.add(new NhlGoalieGameRow(gameId, season, LocalDate.parse(game.path("gameDate").asText()), (short) game.path("gameType").asInt(), home, away,
+                        integerOrNull(game.path("homeTeam"), "score"), integerOrNull(game.path("awayTeam"), "score"), game.path("gameState").asText(null),
+                        goalieId, team, goalie.path("starter").asBoolean(false), goalie.path("decision").asText(null), toiSeconds(goalie.path("toi").asText()), shots, saves, goals,
+                        shots == 0 ? null : (double) saves / shots));
+            }
+        }
+        return rows;
+    }
+
+    private int shotsAgainst(JsonNode goalie) { String[] value = goalie.path("saveShotsAgainst").asText("0/0").split("/"); return value.length == 2 ? Integer.parseInt(value[1]) : 0; }
+    private int savesFromPair(JsonNode goalie) { String[] value = goalie.path("saveShotsAgainst").asText("0/0").split("/"); return value.length == 2 ? Integer.parseInt(value[0]) : 0; }
+    private Integer toiSeconds(String value) { if (value == null || !value.matches("\\d+:\\d{2}")) return null; String[] parts=value.split(":"); return Integer.parseInt(parts[0])*60+Integer.parseInt(parts[1]); }
+
     /** Maps only regular-season, single-team lines; aggregate and playoff rows are not importable stints. */
     List<NhlGoalieSeasonRow> toRegularSeasonTeamSplits(JsonNode response) {
         return toRegularSeasonTeamSplits(response, null, null);
