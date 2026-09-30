@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.creasevision.api.dto.GoalieDTO;
 import com.creasevision.api.repository.GoalieRepository;
@@ -16,6 +17,7 @@ public class GoalieService {
 
     private final GoalieRepository goalieRepository;
 
+    @Transactional(readOnly = true)
     public List<GoalieDTO> getAllGoalies() {
         return goalieRepository.findAll()
                 .stream()
@@ -23,6 +25,7 @@ public class GoalieService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public GoalieDTO getGoalieById(Long id) {
         return goalieRepository.findById(id)
                 .map(GoalieDTO::fromEntity)
