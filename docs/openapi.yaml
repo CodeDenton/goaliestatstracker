@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: CreaseVision Analytics API
+  version: 1.0.0
+paths:
+  /api/goalies/{goalieId}/games:
+    get:
+      summary: Newest-first paginated goalie game log
+      parameters:
+        - $ref: '#/components/parameters/goalieId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      responses: { '200': { description: Game-log page }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /api/games:
+    get:
+      summary: Regular-season game index
+      parameters:
+        - { name: season, in: query, required: true, schema: { type: string, pattern: '^\\d{8}$' } }
+        - { name: team, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      responses: { '200': { description: Game-index page }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /api/games/{gameId}:
+    get:
+      summary: Game and goalie shot-map detail
+      parameters: [ { name: gameId, in: path, required: true, schema: { type: integer, format: int64 } } ]
+      responses: { '200': { description: Game detail }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/goalies/compare:
+    get:
+      summary: Compare two to four goalies for one regular season
+      parameters:
+        - { name: season, in: query, required: true, schema: { type: string, pattern: '^\\d{8}$' } }
+        - { name: goalieId, in: query, required: true, schema: { type: array, minItems: 2, maxItems: 4, items: { type: integer, format: int64 } } }
+      responses: { '200': { description: Goalie comparison }, '400': { $ref: '#/components/responses/BadRequest' } }
+components:
+  parameters:
+    goalieId: { name: goalieId, in: path, required: true, schema: { type: integer, format: int64 } }
+    page: { name: page, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+    size: { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+  responses:
+    BadRequest: { description: Invalid request parameters }
+    NotFound: { description: Requested resource does not exist }

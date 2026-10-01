@@ -131,6 +131,54 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
         catch (IOException e) { throw new IllegalStateException("Could not fetch NHL play-by-play for " + gameId,e); }
         catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException("NHL play-by-play import was interrupted",e); }
     }
+
+    @Override
+    public List<NhlShotEventRow> fetchShotEvents(long gameId) {
+        try {
+            return toShotEvents(getJson("https://api-web.nhle.com/v1/gamecenter/" + gameId + "/play-by-play"));
+        } catch (IOException exception) {
+            throw new IllegalStateException("Could not fetch NHL play-by-play for " + gameId, exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("NHL play-by-play import was interrupted", exception);
+        }
+    }
+
+    @Override
+    public List<Long> fetchRegularSeasonGameIds(String season) {
+        try {
+            java.util.Set<Long> ids = new java.util.TreeSet<>();
+            for (String team : TEAMS) for (JsonNode game : getJson("https://api-web.nhle.com/v1/club-schedule-season/" + team + "/" + season).path("games")) {
+                long id = game.path("id").asLong();
+                if (id > 0 && game.path("gameType").asInt() == 2) ids.add(id);
+            }
+            return List.copyOf(ids);
+        } catch (IOException exception) { throw new IllegalStateException("Could not fetch NHL regular-season schedule for " + season, exception); }
+        catch (InterruptedException exception) { Thread.currentThread().interrupt(); throw new IllegalStateException("NHL schedule import was interrupted", exception); }
+    }
+
+    List<NhlShotEventRow> toShotEvents(JsonNode game) {
+        List<NhlShotEventRow> events = new ArrayList<>();
+        long gameId = game.path("id").asLong();
+        String seasonId = game.path("season").asText();
+        int homeTeamId = game.path("homeTeam").path("id").asInt();
+        String homeTeam = game.path("homeTeam").path("abbrev").asText();
+        String awayTeam = game.path("awayTeam").path("abbrev").asText();
+
+        for (JsonNode play : game.path("plays")) {
+            String type = play.path("typeDescKey").asText();
+            if (!type.equals("shot-on-goal") && !type.equals("goal")) continue;
+            JsonNode details = play.path("details");
+            long goalieId = details.path("goalieInNetId").asLong();
+            int eventId = play.path("eventId").asInt();
+            if (goalieId <= 0 || eventId <= 0 || !details.hasNonNull("xCoord") || !details.hasNonNull("yCoord")) continue;
+            String defendingTeam = details.path("eventOwnerTeamId").asInt() == homeTeamId ? awayTeam : homeTeam;
+            events.add(new NhlShotEventRow(
+                    gameId, seasonId, eventId, goalieId, defendingTeam,
+                    details.path("xCoord").asInt(), details.path("yCoord").asInt(), type.equals("goal")));
+        }
+        return events;
+    }
     List<NhlShotZoneRow> toShotZoneRows(JsonNode game) {
         Map<String,int[]> totals=new LinkedHashMap<>(); long id=game.path("id").asLong(); String season=game.path("season").asText(); int homeId=game.path("homeTeam").path("id").asInt(); String home=game.path("homeTeam").path("abbrev").asText(); String away=game.path("awayTeam").path("abbrev").asText();
         for(JsonNode play:game.path("plays")) { String type=play.path("typeDescKey").asText(); if(!type.equals("shot-on-goal")&&!type.equals("goal"))continue; JsonNode d=play.path("details"); long goalie=d.path("goalieInNetId").asLong(); if(goalie<=0)continue; String team=d.path("eventOwnerTeamId").asInt()==homeId?away:home; String zone=zone(d.path("xCoord").asInt(),d.path("yCoord").asInt()); String key=goalie+"|"+team+"|"+zone; int[] count=totals.computeIfAbsent(key,k->new int[3]); count[0]++; if(type.equals("goal"))count[2]++;else count[1]++; }
