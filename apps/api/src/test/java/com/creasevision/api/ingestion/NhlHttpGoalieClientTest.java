@@ -97,4 +97,19 @@ class NhlHttpGoalieClientTest {
         assertThat(rows).extracting(NhlShotZoneRow::zoneCode,NhlShotZoneRow::shots,NhlShotZoneRow::saves,NhlShotZoneRow::goals)
                 .containsExactlyInAnyOrder(org.assertj.core.groups.Tuple.tuple("INNER_SLOT",2,1,1),org.assertj.core.groups.Tuple.tuple("PERIMETER",1,1,0));
     }
+
+    @Test
+    void preservesIndividualShotCoordinatesForRinkMaps() throws Exception {
+        List<NhlShotEventRow> rows = client.toShotEvents(objectMapper.readTree("""
+                {"id":2025020001,"season":"20252026","homeTeam":{"id":5,"abbrev":"PIT"},"awayTeam":{"abbrev":"EDM"},"plays":[
+                  {"eventId":31,"typeDescKey":"shot-on-goal","details":{"goalieInNetId":8477465,"eventOwnerTeamId":22,"xCoord":80,"yCoord":4}},
+                  {"eventId":32,"typeDescKey":"goal","details":{"goalieInNetId":8477465,"eventOwnerTeamId":22,"xCoord":76,"yCoord":8}}
+                ]}"""));
+
+        assertThat(rows).extracting(NhlShotEventRow::eventId, NhlShotEventRow::defendingTeam,
+                NhlShotEventRow::xCoordinate, NhlShotEventRow::yCoordinate, NhlShotEventRow::goal)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(31, "PIT", 80, 4, false),
+                        org.assertj.core.groups.Tuple.tuple(32, "PIT", 76, 8, true));
+    }
 }

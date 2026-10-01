@@ -10,6 +10,7 @@ public class NhlImportProperties {
     private String importSeason;
     private String importSeasons;
     private Long importGameId;
+    private String importGameSeason;
     private boolean refreshOnStartup = true;
     private String refreshSecret;
 
@@ -48,6 +49,8 @@ public class NhlImportProperties {
     public Long getImportGameId() { return importGameId; }
 
     public void setImportGameId(Long importGameId) { this.importGameId = importGameId; }
+    public String getImportGameSeason() { return importGameSeason; }
+    public void setImportGameSeason(String importGameSeason) { this.importGameSeason = importGameSeason; }
 
     public boolean isRefreshOnStartup() {
         return refreshOnStartup;

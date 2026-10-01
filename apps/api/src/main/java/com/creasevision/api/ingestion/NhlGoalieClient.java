@@ -22,4 +22,9 @@ public interface NhlGoalieClient {
     List<NhlGoalieGameRow> fetchGoalieGameRows(long gameId);
 
     List<NhlShotZoneRow> fetchShotZoneRows(long gameId);
+
+    List<NhlShotEventRow> fetchShotEvents(long gameId);
+
+    /** Every completed or scheduled regular-season NHL game in the requested season. */
+    List<Long> fetchRegularSeasonGameIds(String season);
 }
