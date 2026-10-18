@@ -40,7 +40,7 @@ cd apps/api
 ./mvnw test
 ```
 
-NHL refreshes run at 1:00 AM Vancouver time while the API is awake. The service also refreshes on startup. A refresh is guarded so startup, the in-process scheduler, and an external trigger cannot run imports concurrently.
+NHL refreshes run at 1:00 AM Vancouver time through the GitHub Actions trigger below. Startup refreshes are disabled by default so a hosted API waking from idle does not call the NHL API; they can be enabled deliberately with `NHL_REFRESH_ON_STARTUP=true`. A refresh is guarded so startup, the in-process scheduler, and an external trigger cannot run imports concurrently.
 
 ## Production nightly refresh
 
