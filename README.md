@@ -40,11 +40,11 @@ cd apps/api
 ./mvnw test
 ```
 
-NHL refreshes run at 1:00 AM Vancouver time through the GitHub Actions trigger below. Startup refreshes are disabled by default so a hosted API waking from idle does not call the NHL API; they can be enabled deliberately with `NHL_REFRESH_ON_STARTUP=true`. A refresh is guarded so startup, the in-process scheduler, and an external trigger cannot run imports concurrently.
+NHL refreshes run nightly at 1:00 AM Pacific Standard Time (2:00 AM during daylight-saving time) through the GitHub Actions trigger below. Startup refreshes are disabled by default so a hosted API waking from idle does not call the NHL API; they can be enabled deliberately with `NHL_REFRESH_ON_STARTUP=true`. A refresh is guarded so startup, the in-process scheduler, and an external trigger cannot run imports concurrently.
 
 ## Production nightly refresh
 
-The repository workflow [`.github/workflows/nightly-goalie-refresh.yml`](.github/workflows/nightly-goalie-refresh.yml) wakes Render and invokes the protected refresh endpoint. It has two UTC schedules and checks `America/Vancouver` at runtime, so it executes exactly at 1:00 AM across daylight-saving changes.
+The repository workflow [`.github/workflows/nightly-goalie-refresh.yml`](.github/workflows/nightly-goalie-refresh.yml) wakes Render and invokes the protected refresh endpoint once daily at 09:00 UTC. This is 1:00 AM in Pacific Standard Time and 2:00 AM during daylight-saving time. It deliberately refreshes whenever the scheduled job starts, so a delayed GitHub Actions job cannot silently skip the import.
 
 Configure these values without committing their contents:
 
