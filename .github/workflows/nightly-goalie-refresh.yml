@@ -2,8 +2,9 @@ name: Nightly Goalie Refresh
 
 on:
   schedule:
-    # GitHub Actions uses UTC. One entry is 1:00 AM PDT and the other is 1:00 AM PST.
-    - cron: "0 8 * * *"
+    # 09:00 UTC is 1:00 AM PST and 2:00 AM PDT: safely after the latest games.
+    # Use one trigger and do not check the actual start time, since GitHub can
+    # delay scheduled jobs by several hours.
     - cron: "0 9 * * *"
   workflow_dispatch:
 
@@ -11,15 +12,11 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger the refresh at 1 AM Vancouver time
+      - name: Trigger the overnight refresh
         env:
-          EVENT_NAME: ${{ github.event_name }}
           REFRESH_URL: ${{ secrets.RENDER_REFRESH_URL }}
           REFRESH_SECRET: ${{ secrets.NHL_REFRESH_SECRET }}
         run: |
-          if [ "$EVENT_NAME" = "schedule" ] && [ "$(TZ=America/Vancouver date +%H)" != "01" ]; then
-            exit 0
-          fi
           curl --fail-with-body --retry 4 --retry-all-errors --connect-timeout 20 --max-time 180 \
             --request POST "${REFRESH_URL}/api/internal/refresh" \
             --header "X-Refresh-Secret: ${REFRESH_SECRET}"
