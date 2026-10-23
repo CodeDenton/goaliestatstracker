@@ -1,20 +1,119 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { checkRateLimit } from "@vercel/firewall";
+
+const ANALYST_RATE_LIMIT_ID = "analyst-chat";
+const MAX_REQUEST_BYTES = 16 * 1024;
+const MAX_QUESTION_LENGTH = 1_000;
+const MAX_HISTORY_MESSAGES = 8;
+const MAX_HISTORY_MESSAGE_LENGTH = 2_000;
+
+type ConversationMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type LocalizedName = { default: string };
+
+type ShotLocationSummary = {
+  locationCode: string;
+  savePctg: number;
+  savePctgPercentile: number;
+  savePctgLeagueAvg: number;
+  goalsAgainst: number;
+  goalsAgainstLeagueAvg: number;
+};
+
+type ShotLocationDetail = {
+  area: string;
+  savePctg: number;
+  savePctgPercentile: number;
+  saves: number;
+  savesPercentile: number;
+};
+
+type GoaliePayload = {
+  player: {
+    firstName: LocalizedName;
+    lastName: LocalizedName;
+    team: { commonName: LocalizedName };
+    gamesPlayed: number;
+    wins: number;
+    losses: number;
+    overtimeLosses: number;
+    goalsAgainstAvg: number;
+    savePctg: number;
+  };
+  shotLocationSummary?: ShotLocationSummary[];
+  shotLocationDetails?: ShotLocationDetail[];
+};
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 export async function POST(req: NextRequest) {
+  let rateLimitResult: Awaited<ReturnType<typeof checkRateLimit>>;
+
   try {
-    const { question, history } = await req.json();
+    rateLimitResult = await checkRateLimit(ANALYST_RATE_LIMIT_ID, { request: req });
+  } catch (error) {
+    // Fail closed: the expensive upstream request must not run if its protection is unavailable.
+    console.error("Analyst rate-limit check failed", error);
+    return new Response("The Analyst is temporarily unavailable. Please try again later.", { status: 503 });
+  }
+
+  if (rateLimitResult.error === "not-found") {
+    console.error("Analyst rate-limit rule is not configured");
+    return new Response("The Analyst is temporarily unavailable. Please try again later.", { status: 503 });
+  }
+
+  if (rateLimitResult.rateLimited) {
+    return new Response("Too many requests. Please wait a minute and try again.", {
+      status: 429,
+      headers: { "Cache-Control": "no-store" },
+    });
+  }
+
+  const contentLength = Number(req.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_REQUEST_BYTES) {
+    return new Response("Request is too large.", { status: 413 });
+  }
+
+  try {
+    const body: unknown = await req.json();
+    if (!body || typeof body !== "object") {
+      return new Response("Invalid request.", { status: 400 });
+    }
+
+    const { question, history } = body as { question?: unknown; history?: unknown };
+    if (
+      typeof question !== "string" ||
+      question.trim().length === 0 ||
+      question.length > MAX_QUESTION_LENGTH ||
+      !Array.isArray(history) ||
+      history.length > MAX_HISTORY_MESSAGES ||
+      !history.every(
+        (message): message is ConversationMessage =>
+          Boolean(message) &&
+          typeof message === "object" &&
+          (message.role === "user" || message.role === "assistant") &&
+          typeof message.content === "string" &&
+          message.content.length <= MAX_HISTORY_MESSAGE_LENGTH,
+      )
+    ) {
+      return new Response("Invalid request.", { status: 400 });
+    }
 
     const goaliesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/goalies`, {
       next: { revalidate: 604800 }, // once every 7 days (to save claude credits and reg season is over rn so no need)
     });
-    const goalies = await goaliesRes.json();
+    if (!goaliesRes.ok) {
+      return new Response("Goalie data is temporarily unavailable.", { status: 503 });
+    }
+    const goalies = (await goaliesRes.json()) as GoaliePayload[];
 
-    const goalieContext = goalies.map((g: any) => ({
+    const goalieContext = goalies.map((g) => ({
       name: `${g.player.firstName.default} ${g.player.lastName.default}`,
       team: g.player.team.commonName.default,
       gamesPlayed: g.player.gamesPlayed,
@@ -23,7 +122,7 @@ export async function POST(req: NextRequest) {
       overtimeLosses: g.player.overtimeLosses,
       goalsAgainstAvg: g.player.goalsAgainstAvg,
       savePctg: g.player.savePctg,
-      shotLocationSummary: g.shotLocationSummary?.map((s: any) => ({
+      shotLocationSummary: g.shotLocationSummary?.map((s) => ({
         locationCode: s.locationCode,
         savePctg: s.savePctg,
         savePctgPercentile: s.savePctgPercentile,
@@ -31,7 +130,7 @@ export async function POST(req: NextRequest) {
         goalsAgainst: s.goalsAgainst,
         goalsAgainstLeagueAvg: s.goalsAgainstLeagueAvg,
       })),
-      shotLocationDetails: g.shotLocationDetails?.map((d: any) => ({
+      shotLocationDetails: g.shotLocationDetails?.map((d) => ({
         area: d.area,
         savePctg: d.savePctg,
         savePctgPercentile: d.savePctgPercentile,
@@ -49,8 +148,8 @@ export async function POST(req: NextRequest) {
         role: "assistant" as const,
         content: "Got it! I have the full goalie dataset loaded. What would you like to know?",
       },
-      ...history.map((msg: any) => ({
-        role: msg.role as "user" | "assistant",
+      ...history.map((msg) => ({
+        role: msg.role,
         content: msg.content,
       })),
       {
@@ -86,10 +185,11 @@ export async function POST(req: NextRequest) {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Transfer-Encoding": "chunked",
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Analyst request failed", error);
     return new Response("Something went wrong", { status: 500 });
   }
 }
