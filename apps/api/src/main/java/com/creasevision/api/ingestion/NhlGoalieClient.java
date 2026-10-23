@@ -25,6 +25,6 @@ public interface NhlGoalieClient {
 
     List<NhlShotEventRow> fetchShotEvents(long gameId);
 
-    /** Every completed or scheduled regular-season NHL game in the requested season. */
+    /** Every completed regular-season NHL game in the requested season. */
     List<Long> fetchRegularSeasonGameIds(String season);
 }

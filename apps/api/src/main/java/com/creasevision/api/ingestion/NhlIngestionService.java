@@ -26,6 +26,8 @@ public class NhlIngestionService {
     private final NhlImportProperties properties;
     private final ImportRunRepository importRuns;
     private final SeasonRepository seasons;
+    private final SeasonImportService seasonImport;
+    private final SeasonGameImportService gameImport;
     private final AtomicBoolean refreshRunning = new AtomicBoolean(false);
 
     public NhlIngestionService(
@@ -33,12 +35,16 @@ public class NhlIngestionService {
             GoalieRepository goalieRepository,
             NhlImportProperties properties,
             ImportRunRepository importRuns,
-            SeasonRepository seasons) {
+            SeasonRepository seasons,
+            SeasonImportService seasonImport,
+            SeasonGameImportService gameImport) {
         this.nhlGoalieClient = nhlGoalieClient;
         this.goalieRepository = goalieRepository;
         this.properties = properties;
         this.importRuns = importRuns;
         this.seasons = seasons;
+        this.seasonImport = seasonImport;
+        this.gameImport = gameImport;
     }
 
     public ImportResult refreshCurrentSeason() {
@@ -64,8 +70,21 @@ public class NhlIngestionService {
             }
 
             goalieRepository.saveAll(goalies);
-            log.info("Saved {} goalies for season {}.", goalies.size(), properties.getSeason());
-            return complete(run, ImportResult.success(properties.getSeason(), goalies.size()));
+
+            SeasonImportService.SeasonImportResult seasonResult = seasonImport.importSeason(properties.getSeason());
+            if (!"SUCCEEDED".equals(seasonResult.status())) {
+                throw new IllegalStateException("Season-stat refresh failed: " + seasonResult.errorDetail());
+            }
+
+            SeasonGameImportService.Result gameResult = gameImport.importSeason(properties.getSeason());
+            if (gameResult.failedGames() > 0) {
+                throw new IllegalStateException("Game-detail refresh failed for " + gameResult.failedGames() + " game(s).");
+            }
+
+            int recordsWritten = goalies.size() + seasonResult.recordsWritten() + gameResult.goalieLinesWritten();
+            log.info("Saved {} goalie profiles, {} season-stat lines, and {} game-stat lines for season {}.",
+                    goalies.size(), seasonResult.recordsWritten(), gameResult.goalieLinesWritten(), properties.getSeason());
+            return complete(run, ImportResult.success(properties.getSeason(), recordsWritten));
         } catch (RuntimeException exception) {
             log.error("NHL import failed for season {}.", properties.getSeason(), exception);
             return complete(run, ImportResult.failure(properties.getSeason(), exception.getMessage()));
@@ -76,8 +95,8 @@ public class NhlIngestionService {
 
     private ImportResult complete(ImportRun run, ImportResult result) {
         run.setCompletedAt(OffsetDateTime.now());
-        run.setRecordsRead(result.savedGoalies());
-        run.setRecordsWritten(result.savedGoalies());
+        run.setRecordsRead(result.recordsWritten());
+        run.setRecordsWritten(result.recordsWritten());
         run.setStatus(switch (result.status()) {
             case SUCCESS -> "SUCCEEDED";
             case NO_DATA -> "PARTIAL";
@@ -113,10 +132,10 @@ public class NhlIngestionService {
         seasons.save(season);
     }
 
-    public record ImportResult(String season, int savedGoalies, Status status, String detail) {
+    public record ImportResult(String season, int recordsWritten, Status status, String detail) {
 
-        public static ImportResult success(String season, int savedGoalies) {
-            return new ImportResult(season, savedGoalies, Status.SUCCESS, null);
+        public static ImportResult success(String season, int recordsWritten) {
+            return new ImportResult(season, recordsWritten, Status.SUCCESS, null);
         }
 
         public static ImportResult noData(String season) {
