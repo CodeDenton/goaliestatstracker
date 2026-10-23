@@ -33,6 +33,8 @@ class NhlIngestionServiceTest {
     private GoalieRepository goalieRepository;
     @Mock private ImportRunRepository importRuns;
     @Mock private SeasonRepository seasons;
+    @Mock private SeasonImportService seasonImport;
+    @Mock private SeasonGameImportService gameImport;
 
     private NhlIngestionService service;
 
@@ -42,19 +44,22 @@ class NhlIngestionServiceTest {
         properties.setSeason("20262027");
         properties.setSituation("2");
         when(importRuns.save(org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> invocation.getArgument(0));
-        service = new NhlIngestionService(nhlGoalieClient, goalieRepository, properties, importRuns, seasons);
+        service = new NhlIngestionService(nhlGoalieClient, goalieRepository, properties, importRuns, seasons, seasonImport, gameImport);
     }
 
     @Test
     void savesGoaliesReturnedByTheNhlClient() {
         List<Goalie> goalies = List.of(goalie(1L), goalie(2L));
         when(nhlGoalieClient.fetchGoalies("20262027", "2")).thenReturn(goalies);
+        stubSuccessfulDetailImports();
 
         NhlIngestionService.ImportResult result = service.refreshCurrentSeason();
 
         assertThat(result.status()).isEqualTo(NhlIngestionService.Status.SUCCESS);
-        assertThat(result.savedGoalies()).isEqualTo(2);
+        assertThat(result.recordsWritten()).isEqualTo(6);
         verify(goalieRepository).saveAll(goalies);
+        verify(seasonImport).importSeason("20262027");
+        verify(gameImport).importSeason("20262027");
     }
 
     @Test
@@ -96,6 +101,7 @@ class NhlIngestionServiceTest {
             assertThat(releaseClient.await(5, TimeUnit.SECONDS)).isTrue();
             return List.of(goalie(1L));
         });
+        stubSuccessfulDetailImports();
 
         CompletableFuture<NhlIngestionService.ImportResult> first =
                 CompletableFuture.supplyAsync(service::refreshCurrentSeason);
@@ -114,5 +120,12 @@ class NhlIngestionServiceTest {
         Goalie goalie = new Goalie();
         goalie.setId(id);
         return goalie;
+    }
+
+    private void stubSuccessfulDetailImports() {
+        when(seasonImport.importSeason("20262027"))
+                .thenReturn(new SeasonImportService.SeasonImportResult("20262027", "SUCCEEDED", 2, 2, null));
+        when(gameImport.importSeason("20262027"))
+                .thenReturn(new SeasonGameImportService.Result("20262027", 1, 2, 0));
     }
 }

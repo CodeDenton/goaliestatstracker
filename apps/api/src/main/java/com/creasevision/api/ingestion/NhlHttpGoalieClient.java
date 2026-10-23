@@ -150,7 +150,8 @@ public class NhlHttpGoalieClient implements NhlGoalieClient {
             java.util.Set<Long> ids = new java.util.TreeSet<>();
             for (String team : TEAMS) for (JsonNode game : getJson("https://api-web.nhle.com/v1/club-schedule-season/" + team + "/" + season).path("games")) {
                 long id = game.path("id").asLong();
-                if (id > 0 && game.path("gameType").asInt() == 2) ids.add(id);
+                if (id > 0 && game.path("gameType").asInt() == 2
+                        && "OFF".equalsIgnoreCase(game.path("gameState").asText())) ids.add(id);
             }
             return List.copyOf(ids);
         } catch (IOException exception) { throw new IllegalStateException("Could not fetch NHL regular-season schedule for " + season, exception); }
