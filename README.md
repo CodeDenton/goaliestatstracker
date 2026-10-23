@@ -31,6 +31,18 @@ npm run dev
 
 The frontend expects `NEXT_PUBLIC_API_URL` to point to the API, for example `http://localhost:8080` during local development.
 
+## Production Analyst rate limit
+
+The public Analyst endpoint calls Anthropic and must be protected by Vercel's Firewall. After deploying the branch that contains this configuration, open the Vercel project, then **Firewall → Configure → New Rule** and create a rate-limit rule with:
+
+- Condition: `@vercel/firewall`
+- Rate limit ID: `analyst-chat`
+- Counting key: IP
+- Strategy: Fixed window, **5 requests per minute**
+- Action: 429 (Rate Limit)
+
+Save the rule, select **Review Changes**, and publish it. The route fails closed with a 503 response if Vercel cannot perform this check, so an absent or unavailable rule cannot result in an unprotected Anthropic request. The endpoint also accepts only a small, validated request body and limits conversation history to control prompt cost.
+
 ## API tests
 
 The API uses JUnit 5, Mockito, and an in-memory H2 database for tests. The test configuration never connects to Supabase or calls the NHL API.
