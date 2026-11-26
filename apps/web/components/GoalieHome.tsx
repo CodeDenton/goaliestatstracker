@@ -1,43 +1,46 @@
-import GoalieGrid from "@/components/GoalieGrid"
+import LeaderboardExplorer, { type LeaderboardRow } from "@/components/LeaderboardExplorer";
 
-const Home = async () => {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/goalies`, {
-    next: { revalidate: 604800 }, // once every 7 days
-  })
+type Response = { total: number; rows: LeaderboardRow[] };
+const season = "20262027";
 
-  if (!res.ok) throw new Error(`API failed with ${res.status}`)
-
-  const data = await res.json()
-
-  // const totalGoalies = data.length
-  // const avgSavePctg = data.reduce((sum: number, g: any) => sum + (g.player.savePctg ?? 0), 0) / totalGoalies
-  
-
-  return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
-
-      {/* Hero */}
-      <header className="max-w-7xl mx-auto px-6 pt-10 pb-6">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-neutral-100">
-          NHL Goalie Analytics
-        </h1>
-        <p className="text-sm text-neutral-500 mt-1.5 max-w-xl">
-          Zone save maps, shot heatmaps, and performance metrics for every goalie this season.
-        </p>
-
-     
-    </header>
-
-    <GoalieGrid goalies={data} />
-
-      {/* Footer */}
-      <footer className="border-t border-white/6 py-5">
-        <div className="max-w-7xl mx-auto px-6 text-center text-xs text-neutral-600">
-          © 2026 CreaseVision · Data via NHL Public API
-        </div>
-      </footer>
-    </main>
-  )
+async function getLeaderboard(): Promise<Response | null> {
+  const base = process.env.NEXT_PUBLIC_API_URL;
+  if (!base) return null;
+  try {
+    const response = await fetch(`${base}/api/leaderboard?season=${season}&minGames=0&size=100&sort=savePctg&direction=desc`, {
+      cache: "force-cache",
+      next: { revalidate: 3600 },
+    });
+    return response.ok ? response.json() : null;
+  } catch { return null; }
 }
 
-export default Home
+export default async function GoalieHome() {
+  const data = await getLeaderboard();
+  const rows = data?.rows ?? [];
+  const totalSaves = rows.reduce((sum, goalie) => sum + goalie.saves, 0);
+  const totalShots = rows.reduce((sum, goalie) => sum + goalie.shotsAgainst, 0);
+  const leagueSavePct = totalShots ? totalSaves / totalShots : 0;
+
+  return <main className="cv-shell py-6 sm:py-8">
+    <section className="rounded-2xl bg-[#eff6ff] px-5 py-6 sm:px-8 sm:py-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="cv-kicker text-[#1d4ed8]">NHL · 2026–27 REGULAR SEASON</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-[-0.045em] text-slate-950 sm:text-3xl">Goalie leaderboard</h1>
+        </div>
+        <p className="text-sm text-slate-500">Updated from NHL game data</p>
+      </div>
+
+      <dl className="mt-7 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl bg-white px-4 py-4"><dt className="cv-kicker">GOALIES</dt><dd className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-slate-950">{data?.total ?? "—"}</dd></div>
+        <div className="rounded-xl bg-white px-4 py-4"><dt className="cv-kicker">LEAGUE SV%</dt><dd className="mt-1 font-mono text-2xl font-semibold tracking-[-0.04em] text-[#1d4ed8]">{leagueSavePct ? leagueSavePct.toFixed(3).replace(/^0/, "") : "—"}</dd></div>
+        <div className="rounded-xl bg-white px-4 py-4"><dt className="cv-kicker">SHOTS TRACKED</dt><dd className="mt-1 font-mono text-2xl font-semibold tracking-[-0.04em] text-[#b91c1c]">{totalShots ? totalShots.toLocaleString() : "—"}</dd></div>
+      </dl>
+    </section>
+
+    <section className="mt-5 rounded-2xl bg-white px-5 py-6 sm:mt-7 sm:px-8 sm:py-8">
+      <LeaderboardExplorer goalies={rows} unavailable={!data} />
+    </section>
+  </main>;
+}
